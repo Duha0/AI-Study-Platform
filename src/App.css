@@ -1,0 +1,750 @@
+/* ==========================================================================
+   StudyAI dashboard styles
+
+   Every color used on the dashboard is a variable defined below. The light
+   palette lives on :root, and the dark palette overrides the same variable
+   names under [data-theme="dark"]. App.jsx puts that attribute on <html>,
+   so switching themes only swaps these values — no component knows or cares.
+
+   Layout sections, then the three responsive tiers, are at the bottom.
+   ========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  --paper: #fafbf8;        /* page background */
+  --surface: #ffffff;      /* cards, sidebar */
+  --ink: #1f3129;          /* main text */
+  --ink-soft: #66786e;     /* secondary text */
+
+  --green: #2e6b4f;        /* primary brand green */
+  --green-hover: #24543e;  /* primary button hover */
+  --on-primary: #ffffff;   /* text sitting on top of green */
+
+  --amber: #e3b23c;        /* weekly progress fill */
+  --line: #e2e8e1;         /* borders and dividers */
+  --track: #eef2ee;        /* empty part of a progress bar */
+  --subtle: #f1f5f1;       /* hover background */
+  --accent-soft: #eaf2ed;  /* active nav background, avatar */
+  --accent-fg: #2e6b4f;    /* active nav text */
+
+  --radius: 14px;
+  --gap: 24px;
+  --sidebar-width: 240px;
+}
+
+/* Dark palette. These are chosen for contrast on a dark surface, not
+   inverted: the green lifts to a lighter tone so it stays legible, and
+   text on green becomes dark rather than white. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #121714;
+  --surface: #1a211d;
+  --ink: #e7ede8;
+  --ink-soft: #97a79d;
+
+  --green: #62ac83;
+  --green-hover: #77be96;
+  --on-primary: #10221a;
+
+  --amber: #e5bc55;
+  --line: #2b362f;
+  --track: #27322c;
+  --subtle: #222c27;
+  --accent-soft: #1f3329;
+  --accent-fg: #7dc39c;
+}
+
+/* --------------------------------------------------------------------------
+   Layout shell
+   -------------------------------------------------------------------------- */
+
+.app {
+  display: flex;
+  min-height: 100vh;
+  max-width: 100%;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.main {
+  flex: 1;
+  min-width: 0; /* stops wide content from pushing the page sideways */
+  padding: 40px clamp(20px, 4vw, 48px) 64px;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar
+   -------------------------------------------------------------------------- */
+
+.sidebar {
+  width: var(--sidebar-width);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 28px 18px;
+  background-color: var(--surface);
+  border-right: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 6px;
+}
+
+.sidebar-mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background-color: var(--green);
+  color: var(--on-primary);
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sidebar-name {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-link:hover {
+  background-color: var(--subtle);
+  color: var(--ink);
+}
+
+.nav-link-active {
+  background-color: var(--accent-soft);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.nav-icon {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* --- theme toggle --- */
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  background-color: var(--subtle);
+  color: var(--ink);
+}
+
+.theme-toggle svg {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+}
+
+/* --- user --- */
+
+.sidebar-user-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding-left: 4px;
+}
+
+.sidebar-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--accent-soft);
+  color: var(--accent-fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.sidebar-user {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.sidebar-plan {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Welcome header
+   -------------------------------------------------------------------------- */
+
+.welcome {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  margin-bottom: 40px;
+}
+
+.welcome-title {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(27px, 4vw, 40px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.welcome-subtitle {
+  margin: 8px 0 0;
+  font-size: 16px;
+  color: var(--ink-soft);
+}
+
+.button-primary {
+  padding: 11px 20px;
+  border: none;
+  border-radius: 10px;
+  background-color: var(--green);
+  color: var(--on-primary);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button-primary:hover {
+  background-color: var(--green-hover);
+}
+
+.button-secondary {
+  padding: 11px 20px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.button-secondary:hover {
+  background-color: var(--subtle);
+}
+
+/* Placeholder text for pages that don't exist yet (Progress). */
+.coming-soon {
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+/* --------------------------------------------------------------------------
+   Shared section pieces
+   -------------------------------------------------------------------------- */
+
+.section {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  margin: 0 0 16px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Subject cards
+   -------------------------------------------------------------------------- */
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--gap);
+}
+
+.subject-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+}
+
+.subject-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.subject-tile {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  color: #ffffff;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.subject-count {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.subject-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.subject-meta {
+  margin: 4px 0 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.subject-bar {
+  height: 6px;
+  border-radius: 999px;
+  background-color: var(--track);
+  overflow: hidden;
+}
+
+.subject-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.subject-percent {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Lower area: materials beside progress
+   -------------------------------------------------------------------------- */
+
+.lower-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+.lower-grid .section {
+  margin-bottom: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Recent materials
+   -------------------------------------------------------------------------- */
+
+.material-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  overflow: hidden;
+}
+
+.material-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.material-row:last-child {
+  border-bottom: none;
+}
+
+.material-dot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.material-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.material-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: break-word;
+}
+
+.material-meta {
+  margin: 3px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.material-when {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Progress card
+   -------------------------------------------------------------------------- */
+
+.progress-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+}
+
+.progress-number {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 42px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.progress-goal {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.progress-label {
+  margin: 10px 0 20px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.progress-track {
+  height: 8px;
+  border-radius: 999px;
+  background-color: var(--track);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background-color: var(--amber);
+}
+
+.progress-streak {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Create Subject modal
+   -------------------------------------------------------------------------- */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(15, 20, 17, 0.45);
+  z-index: 100;
+}
+
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 28px;
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.modal-title {
+  margin: 0 0 20px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background-color: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: 2px solid var(--green);
+  outline-offset: 1px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* ==========================================================================
+   Responsive tiers
+   1024px — small laptops: narrower sidebar
+    900px — tablets: the lower two columns become one
+    720px — phones: the sidebar becomes a header
+    560px — small phones: tighter rows
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 200px;
+    --gap: 20px;
+  }
+
+  .main {
+    padding: 32px 24px 56px;
+  }
+
+  .subject-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .lower-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* The materials section is no longer beside the progress card,
+     so it needs its spacing back. */
+  .lower-grid .section:first-child {
+    margin-bottom: 36px;
+  }
+
+  .progress-number {
+    font-size: 36px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app {
+    flex-direction: column;
+  }
+
+  /* The sidebar becomes a two-row header: logo and controls on the first
+     row, navigation across the second. Nothing scrolls sideways. */
+  .sidebar {
+    width: 100%;
+    height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    z-index: 10;
+  }
+
+  .sidebar-logo {
+    flex: 1;
+    min-width: 0;
+    padding-left: 0;
+  }
+
+  .sidebar-footer {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .theme-toggle {
+    width: auto;
+    padding: 9px;
+  }
+
+  /* Icon only — the label would crowd the header. */
+  .theme-toggle-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .sidebar-user-row {
+    padding-left: 0;
+  }
+
+  .sidebar-user,
+  .sidebar-plan {
+    display: none;
+  }
+
+  .sidebar-nav {
+    flex-basis: 100%;
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .nav-link {
+    flex: 1;
+    justify-content: center;
+    padding: 9px 6px;
+    font-size: 14px;
+  }
+
+  .nav-icon {
+    display: none;
+  }
+
+  .main {
+    padding: 26px 18px 48px;
+  }
+
+  .welcome {
+    align-items: flex-start;
+    gap: 18px;
+    margin-bottom: 32px;
+  }
+
+  .button-primary {
+    width: 100%;
+  }
+
+  .section {
+    margin-bottom: 32px;
+  }
+
+  .subject-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  /* Let the timestamp drop onto its own line instead of squeezing
+     the material title. */
+  .material-row {
+    flex-wrap: wrap;
+    row-gap: 4px;
+    padding: 14px 16px;
+  }
+
+  .material-when {
+    flex-basis: 100%;
+    padding-left: 23px;
+  }
+
+  .progress-card,
+  .subject-card {
+    padding: 18px;
+  }
+
+  .modal-card {
+    padding: 22px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions .button-primary,
+  .modal-actions .button-secondary {
+    width: 100%;
+  }
+}

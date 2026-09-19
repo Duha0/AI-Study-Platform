@@ -1,0 +1,32 @@
+/* Global resets and base typography. main.jsx already imports this file. */
+
+@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap");
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  /* var(--paper) is defined in App.css and changes with the theme.
+     The second value is a fallback for the split second before it loads. */
+  background-color: var(--paper, #fafbf8);
+  color: var(--ink, #1f3129);
+  font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden; /* nothing should ever scroll sideways */
+}
+
+/* Visible keyboard focus everywhere, for accessibility. */
+:focus-visible {
+  outline: 2px solid var(--green, #2e6b4f);
+  outline-offset: 2px;
+}

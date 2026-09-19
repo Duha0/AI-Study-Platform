@@ -1,14 +1,16 @@
-// One subject card. Used on the Dashboard (a short preview, not clickable)
-// and the Subjects page (the full list, clickable — opens Subject Details).
+// One subject card.
+// - Dashboard preview: neither prop is passed, renders as a plain, static card.
+// - Subjects page: both props are passed — `onOpen` opens Subject Details,
+//   `onDelete` removes the subject (after the caller confirms).
 //
 // `subject.description` is optional — sample subjects don't have one and
 // show `lastOpened` instead; subjects created through the modal always have
 // a description, so that takes priority when present.
 
-function SubjectCard({ subject, onClick }) {
+function SubjectCard({ subject, onOpen, onDelete }) {
   const metaText = subject.description ? subject.description : subject.lastOpened;
 
-  const cardContent = (
+  const cardBody = (
     <>
       <div className="subject-top">
         <span className="subject-tile" style={{ backgroundColor: subject.color }}>
@@ -33,22 +35,49 @@ function SubjectCard({ subject, onClick }) {
     </>
   );
 
-  // With an onClick, render a real <button> so it's clickable and usable
-  // from the keyboard. Without one (the Dashboard preview), render a plain
-  // <article> — the card is just for display there.
-  if (onClick) {
-    return (
+  // Dashboard preview: no interaction, same markup as before.
+  if (!onOpen && !onDelete) {
+    return <article className="subject-card">{cardBody}</article>;
+  }
+
+  // Subjects page: the card itself is a button (opens details), and the
+  // delete button is a separate element layered on top of it. They're
+  // siblings, not one nested inside the other — browsers don't allow a
+  // <button> inside a <button>, and nesting them would also make a click
+  // on Delete accidentally open the card underneath it too.
+  return (
+    <div className="subject-card-shell">
       <button
         type="button"
         className="subject-card subject-card-clickable"
-        onClick={onClick}
+        onClick={onOpen}
       >
-        {cardContent}
+        {cardBody}
       </button>
-    );
-  }
 
-  return <article className="subject-card">{cardContent}</article>;
+      {onDelete && (
+        <button
+          type="button"
+          className="subject-delete-button"
+          onClick={onDelete}
+          aria-label={`Delete ${subject.name}`}
+          title="Delete subject"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-1 0v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6h12z" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default SubjectCard;

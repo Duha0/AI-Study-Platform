@@ -28,6 +28,9 @@
   --accent-soft: #eaf2ed;  /* active nav background, avatar */
   --accent-fg: #2e6b4f;    /* active nav text */
 
+  --danger: #b3261e;       /* delete action */
+  --danger-soft: #fbeae9;  /* delete action hover background */
+
   --radius: 14px;
   --gap: 24px;
   --sidebar-width: 240px;
@@ -54,6 +57,9 @@
   --subtle: #222c27;
   --accent-soft: #1f3329;
   --accent-fg: #7dc39c;
+
+  --danger: #e5776f;
+  --danger-soft: #3a2220;
 }
 
 /* --------------------------------------------------------------------------
@@ -328,17 +334,52 @@
 }
 
 /* Applied only when a card is clickable (the Subjects page passes an
-   onClick; the Dashboard preview doesn't, so those cards stay plain). */
+   onOpen; the Dashboard preview doesn't, so those cards stay plain).
+   The extra right padding leaves room for the delete button, which sits
+   on top of the card as a separate element — see .subject-card-shell. */
 .subject-card-clickable {
   cursor: pointer;
   text-align: left;
   width: 100%;
+  padding-right: 48px;
   font: inherit;
   color: inherit;
 }
 
 .subject-card-clickable:hover {
   border-color: var(--green);
+}
+
+/* Wraps a clickable card plus its delete button. The wrapper itself has no
+   visible style — it just gives the delete button something to position
+   against without nesting a <button> inside another <button>. */
+.subject-card-shell {
+  position: relative;
+}
+
+.subject-delete-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.subject-delete-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.subject-delete-button:hover {
+  background-color: var(--danger-soft);
+  color: var(--danger);
 }
 
 .subject-top {
@@ -482,6 +523,22 @@
   border-bottom: none;
 }
 
+/* Only added on Subject Details, where rows are selectable. Dashboard's
+   Recent Materials list uses plain .material-row alone, so it's unaffected. */
+.material-row-button {
+  width: 100%;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.material-row-active {
+  background-color: var(--accent-soft);
+}
+
 .material-dot {
   width: 9px;
   height: 9px;
@@ -510,6 +567,54 @@
 .material-when {
   flex-shrink: 0;
   font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Material preview (Subject Details — shown when a material is selected)
+   -------------------------------------------------------------------------- */
+
+.material-preview {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+}
+
+.material-preview-filename {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  overflow-wrap: break-word;
+}
+
+.material-preview-type {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background-color: var(--accent-soft);
+  color: var(--accent-fg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.material-preview-description {
+  margin: 16px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.material-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.material-preview-status {
+  margin: 14px 0 0;
+  font-size: 13px;
   color: var(--ink-soft);
 }
 
@@ -806,6 +911,14 @@
 
   .modal-actions .button-primary,
   .modal-actions .button-secondary {
+    width: 100%;
+  }
+
+  .material-preview-actions {
+    flex-direction: column;
+  }
+
+  .material-preview-actions .button-secondary {
     width: 100%;
   }
 }

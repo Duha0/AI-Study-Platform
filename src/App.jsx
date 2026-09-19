@@ -193,6 +193,15 @@ function App() {
     setSubjects((current) => [...current, newSubject]);
   }
 
+  function handleDeleteSubject(id) {
+    setSubjects((current) => current.filter((subject) => subject.id !== id));
+
+    // If the subject being removed is the one currently open in Subject
+    // Details, drop back to the Subjects list instead of showing details
+    // for a subject that no longer exists.
+    setSelectedSubjectId((current) => (current === id ? null : current));
+  }
+
   function handleDashboardCreateClick() {
     // The Dashboard's button stays a placeholder — the modal is only wired
     // up on the Subjects page for this task.
@@ -233,6 +242,7 @@ function App() {
               subjects={subjects}
               onAddSubject={handleAddSubject}
               onSelectSubject={setSelectedSubjectId}
+              onDeleteSubject={handleDeleteSubject}
             />
           ))}
 

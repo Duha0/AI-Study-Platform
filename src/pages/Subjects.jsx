@@ -1,12 +1,12 @@
 import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
-import CreateSubjectModal from "../components/CreateSubjectModal.jsx";
+import CreateSubjectModal from "../components/CreateSubjectModal";
 
 // Colors are assigned to new subjects by cycling through this list, so each
 // one gets a distinct identifying color the same way the sample subjects do.
 const CARD_COLORS = ["#2E6B4F", "#7A5AA6", "#C08A2E", "#3B7C99", "#B85C5C"];
 
-function Subjects({ subjects, onAddSubject, onSelectSubject }) {
+function Subjects({ subjects, onAddSubject, onSelectSubject, onDeleteSubject }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   function handleCreate(name, description) {
@@ -24,6 +24,16 @@ function Subjects({ subjects, onAddSubject, onSelectSubject }) {
 
     onAddSubject(newSubject);
     setIsModalOpen(false);
+  }
+
+  function handleDeleteClick(subject) {
+    const confirmed = window.confirm(
+      `Delete "${subject.name}"? This can't be undone.`
+    );
+    if (confirmed) {
+      onDeleteSubject(subject.id);
+    }
+    // If they hit Cancel, confirmed is false and nothing happens.
   }
 
   return (
@@ -49,7 +59,8 @@ function Subjects({ subjects, onAddSubject, onSelectSubject }) {
             <SubjectCard
               key={subject.id}
               subject={subject}
-              onClick={() => onSelectSubject(subject.id)}
+              onOpen={() => onSelectSubject(subject.id)}
+              onDelete={() => handleDeleteClick(subject)}
             />
           ))}
         </div>

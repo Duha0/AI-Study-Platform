@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
+import SubjectDetails from "./pages/SubjectDetails";
 
 /* ---------------------------------------------------------------------------
    Sample subjects
@@ -13,27 +14,33 @@ const initialSubjects = [
   {
     id: 1,
     name: "Organic Chemistry",
+    description: "Reactions, mechanisms, and the structure of carbon-based compounds.",
     initial: "O",
     color: "#2E6B4F",
     materialCount: 24,
+    quizzesCompleted: 9,
     progress: 68,
     lastOpened: "Opened yesterday",
   },
   {
     id: 2,
     name: "Linear Algebra",
+    description: "Vectors, matrices, and linear transformations.",
     initial: "L",
     color: "#7A5AA6",
     materialCount: 18,
+    quizzesCompleted: 5,
     progress: 41,
     lastOpened: "Opened 3 days ago",
   },
   {
     id: 3,
     name: "World History",
+    description: "Major events and turning points from ancient to modern times.",
     initial: "W",
     color: "#C08A2E",
     materialCount: 11,
+    quizzesCompleted: 2,
     progress: 15,
     lastOpened: "Opened last week",
   },
@@ -171,6 +178,7 @@ function App() {
   const [activePage, setActivePage] = useState("Dashboard");
   const [theme, setTheme] = useState(getSavedTheme);
   const [subjects, setSubjects] = useState(initialSubjects);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -191,11 +199,20 @@ function App() {
     alert("Head to Subjects to create one — that's where the form lives.");
   }
 
+  // Switching sections (Dashboard/Subjects/Progress) always leaves the
+  // Subjects list, not the details of whichever subject was open.
+  function handleNavigate(pageName) {
+    setActivePage(pageName);
+    setSelectedSubjectId(null);
+  }
+
+  const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
+
   return (
     <div className="app">
       <Sidebar
         active={activePage}
-        onNavigate={setActivePage}
+        onNavigate={handleNavigate}
         theme={theme}
         onToggleTheme={toggleTheme}
       />
@@ -205,9 +222,19 @@ function App() {
           <Dashboard subjects={subjects} onCreateSubject={handleDashboardCreateClick} />
         )}
 
-        {activePage === "Subjects" && (
-          <Subjects subjects={subjects} onAddSubject={handleAddSubject} />
-        )}
+        {activePage === "Subjects" &&
+          (selectedSubject ? (
+            <SubjectDetails
+              subject={selectedSubject}
+              onBack={() => setSelectedSubjectId(null)}
+            />
+          ) : (
+            <Subjects
+              subjects={subjects}
+              onAddSubject={handleAddSubject}
+              onSelectSubject={setSelectedSubjectId}
+            />
+          ))}
 
         {activePage === "Progress" && (
           <p className="coming-soon">Progress tracking is coming soon.</p>

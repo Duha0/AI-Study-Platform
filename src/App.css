@@ -327,6 +327,20 @@
   background-color: var(--surface);
 }
 
+/* Applied only when a card is clickable (the Subjects page passes an
+   onClick; the Dashboard preview doesn't, so those cards stay plain). */
+.subject-card-clickable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font: inherit;
+  color: inherit;
+}
+
+.subject-card-clickable:hover {
+  border-color: var(--green);
+}
+
 .subject-top {
   display: flex;
   align-items: center;
@@ -381,6 +395,49 @@
 .subject-percent {
   margin: 8px 0 0;
   font-size: 12px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Subject Details page
+   -------------------------------------------------------------------------- */
+
+.details-back-button {
+  margin-bottom: 20px;
+}
+
+.details-title-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--gap);
+}
+
+.stat-card {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  text-align: center;
+}
+
+.stat-value {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.stat-label {
+  margin: 6px 0 0;
+  font-size: 13px;
   color: var(--ink-soft);
 }
 
@@ -614,6 +671,10 @@
 
   .progress-number {
     font-size: 36px;
+  }
+
+  .stat-value {
+    font-size: 28px;
   }
 }
 

@@ -1,15 +1,15 @@
-// One subject card. Used on both the Dashboard (a short preview) and the
-// Subjects page (the full list), so it lives here instead of inside a page.
+// One subject card. Used on the Dashboard (a short preview, not clickable)
+// and the Subjects page (the full list, clickable — opens Subject Details).
 //
 // `subject.description` is optional — sample subjects don't have one and
 // show `lastOpened` instead; subjects created through the modal always have
 // a description, so that takes priority when present.
 
-function SubjectCard({ subject }) {
+function SubjectCard({ subject, onClick }) {
   const metaText = subject.description ? subject.description : subject.lastOpened;
 
-  return (
-    <article className="subject-card">
+  const cardContent = (
+    <>
       <div className="subject-top">
         <span className="subject-tile" style={{ backgroundColor: subject.color }}>
           {subject.initial}
@@ -30,8 +30,25 @@ function SubjectCard({ subject }) {
         />
       </div>
       <p className="subject-percent">{subject.progress}% complete</p>
-    </article>
+    </>
   );
+
+  // With an onClick, render a real <button> so it's clickable and usable
+  // from the keyboard. Without one (the Dashboard preview), render a plain
+  // <article> — the card is just for display there.
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="subject-card subject-card-clickable"
+        onClick={onClick}
+      >
+        {cardContent}
+      </button>
+    );
+  }
+
+  return <article className="subject-card">{cardContent}</article>;
 }
 
 export default SubjectCard;

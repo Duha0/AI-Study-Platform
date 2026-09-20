@@ -22,7 +22,21 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus }) {
+// Display labels for each material's completionStatus.
+const COMPLETION_LABELS = {
+  "not-started": "Not Started",
+  "in-progress": "In Progress",
+  completed: "Completed",
+};
+
+function SubjectDetails({
+  subject,
+  onBack,
+  onAddMaterial,
+  onUpdateMaterialStatus,
+  onMarkMaterialInProgress,
+  onCompleteMaterialQuiz,
+}) {
   const [selectedMaterialId, setSelectedMaterialId] = useState(null);
   const [activeResourceTab, setActiveResourceTab] = useState("summary");
   const fileInputRef = useRef(null);
@@ -53,6 +67,12 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
   const selectedMaterial = materials.find(
     (material) => material.id === selectedMaterialId
   );
+
+  // Drives the "Materials completed" stat below — calculated fresh on every
+  // render from the materials themselves, never stored as its own number.
+  const completedCount = materials.filter(
+    (material) => material.completionStatus === "completed"
+  ).length;
 
   // Simulates "processing" a newly uploaded file. While the selected
   // material is still marked "processing", wait a moment and then flip it
@@ -95,6 +115,8 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
       uploaded: "Uploaded just now",
       description: "",
       status: "processing",
+      completionStatus: "not-started",
+      quizScore: null,
     };
 
     onAddMaterial(subject.id, newMaterial);
@@ -105,6 +127,7 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
   function handleSelectMaterial(material) {
     setSelectedMaterialId(material.id);
     setActiveResourceTab("summary"); // always start a newly opened material on Summary
+    onMarkMaterialInProgress(subject.id, material.id);
   }
 
   return (
@@ -161,8 +184,10 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
           </article>
 
           <article className="stat-card">
-            <p className="stat-value">{subject.progress}%</p>
-            <p className="stat-label">Study progress</p>
+            <p className="stat-value">
+              {completedCount}/{materials.length}
+            </p>
+            <p className="stat-label">Materials completed</p>
           </article>
         </div>
       </section>
@@ -191,7 +216,14 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
                   />
 
                   <div className="material-text">
-                    <p className="material-title">{material.filename}</p>
+                    <div className="material-title-row">
+                      <p className="material-title">{material.filename}</p>
+                      <span
+                        className={`completion-badge completion-${material.completionStatus || "not-started"}`}
+                      >
+                        {COMPLETION_LABELS[material.completionStatus] || COMPLETION_LABELS["not-started"]}
+                      </span>
+                    </div>
                     <p className="material-meta">
                       {material.fileType} · {material.size}
                     </p>
@@ -274,7 +306,13 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
                 <MaterialSummary key={selectedMaterial.id} />
               )}
               {activeResourceTab === "quiz" && (
-                <MaterialQuiz key={selectedMaterial.id} />
+                <MaterialQuiz
+                  key={selectedMaterial.id}
+                  latestScore={selectedMaterial.quizScore}
+                  onComplete={(score) =>
+                    onCompleteMaterialQuiz(subject.id, selectedMaterial.id, score)
+                  }
+                />
               )}
               {activeResourceTab === "flashcards" && (
                 <MaterialFlashcards key={selectedMaterial.id} />

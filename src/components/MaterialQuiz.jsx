@@ -61,7 +61,13 @@ const QUESTIONS = [
   },
 ];
 
-function MaterialQuiz() {
+// `latestScore` is the persisted score from the material itself (App.jsx
+// state), e.g. { correct: 4, total: 5 } or null if never completed. It's
+// what makes the score survive switching to Summary/Flashcards and back —
+// this component gets unmounted when its tab isn't active, so anything
+// only kept in its own local state would be lost on that switch.
+// `onComplete(score)` reports a finished attempt back up so it can be saved.
+function MaterialQuiz({ latestScore, onComplete }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState(null);
   const [score, setScore] = useState(0);
@@ -71,12 +77,16 @@ function MaterialQuiz() {
   const isLastQuestion = currentIndex === QUESTIONS.length - 1;
 
   function handleNext() {
-    if (selectedOptionId === currentQuestion.correctOptionId) {
-      setScore((current) => current + 1);
-    }
+    // Computed directly instead of read back from state, since setScore
+    // is async — reading `score` here on the last question could still
+    // see last render's value and report the wrong total.
+    const isCorrect = selectedOptionId === currentQuestion.correctOptionId;
+    const updatedScore = isCorrect ? score + 1 : score;
+    setScore(updatedScore);
 
     if (isLastQuestion) {
       setIsFinished(true);
+      onComplete({ correct: updatedScore, total: QUESTIONS.length });
     } else {
       setCurrentIndex((current) => current + 1);
       setSelectedOptionId(null);
@@ -84,6 +94,8 @@ function MaterialQuiz() {
   }
 
   function handleTryAgain() {
+    // This only resets the current attempt — it doesn't clear latestScore,
+    // so the previous result stays visible until a new attempt finishes.
     setCurrentIndex(0);
     setSelectedOptionId(null);
     setScore(0);
@@ -108,6 +120,12 @@ function MaterialQuiz() {
 
   return (
     <div>
+      {latestScore && (
+        <p className="quiz-latest-score">
+          Latest Score: {latestScore.correct}/{latestScore.total}
+        </p>
+      )}
+
       <p className="quiz-progress">
         Question {currentIndex + 1} of {QUESTIONS.length}
       </p>

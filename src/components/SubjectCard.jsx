@@ -10,13 +10,23 @@
 function SubjectCard({ subject, onOpen, onDelete }) {
   const metaText = subject.description ? subject.description : subject.lastOpened;
 
+  // Progress is derived from the materials themselves — not a stored
+  // number — so it can never drift out of sync with what's actually
+  // marked Completed on the Materials list.
+  const totalMaterials = subject.materials.length;
+  const completedMaterials = subject.materials.filter(
+    (material) => material.completionStatus === "completed"
+  ).length;
+  const completionPercent =
+    totalMaterials === 0 ? 0 : Math.round((completedMaterials / totalMaterials) * 100);
+
   const cardBody = (
     <>
       <div className="subject-top">
         <span className="subject-tile" style={{ backgroundColor: subject.color }}>
           {subject.initial}
         </span>
-        <span className="subject-count">{subject.materialCount} materials</span>
+        <span className="subject-count">{totalMaterials} materials</span>
       </div>
 
       <h3 className="subject-name">{subject.name}</h3>
@@ -26,12 +36,14 @@ function SubjectCard({ subject, onOpen, onDelete }) {
         <div
           className="subject-bar-fill"
           style={{
-            width: subject.progress + "%",
+            width: completionPercent + "%",
             backgroundColor: subject.color,
           }}
         />
       </div>
-      <p className="subject-percent">{subject.progress}% complete</p>
+      <p className="subject-percent">
+        {completedMaterials}/{totalMaterials} materials completed
+      </p>
     </>
   );
 

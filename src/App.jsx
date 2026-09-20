@@ -25,7 +25,9 @@ function createSampleMaterials() {
       uploaded: "Uploaded 3 days ago",
       description:
         "An overview of the topics covered in the first week, including key definitions and diagrams.",
-      status: "ready",
+      status: "ready", // upload processing state — unrelated to completionStatus below
+      completionStatus: "completed",
+      quizScore: { correct: 4, total: 5 },
     },
     {
       id: 2,
@@ -36,6 +38,8 @@ function createSampleMaterials() {
       description:
         "A condensed summary of the chapter's main ideas — useful for a quick review before a quiz.",
       status: "ready",
+      completionStatus: "in-progress",
+      quizScore: null,
     },
     {
       id: 3,
@@ -46,6 +50,8 @@ function createSampleMaterials() {
       description:
         "A set of practice problems with varying difficulty, for testing how well the material has landed.",
       status: "ready",
+      completionStatus: "not-started",
+      quizScore: null,
     },
   ];
 }
@@ -59,7 +65,6 @@ const initialSubjects = [
     color: "#2E6B4F",
     materials: createSampleMaterials(),
     quizzesCompleted: 9,
-    progress: 68,
     lastOpened: "Opened yesterday",
   },
   {
@@ -70,7 +75,6 @@ const initialSubjects = [
     color: "#7A5AA6",
     materials: createSampleMaterials(),
     quizzesCompleted: 5,
-    progress: 41,
     lastOpened: "Opened 3 days ago",
   },
   {
@@ -81,7 +85,6 @@ const initialSubjects = [
     color: "#C08A2E",
     materials: createSampleMaterials(),
     quizzesCompleted: 2,
-    progress: 15,
     lastOpened: "Opened last week",
   },
 ];
@@ -248,7 +251,6 @@ function App() {
       color: CARD_COLORS[subjects.length % CARD_COLORS.length],
       materials: [],
       quizzesCompleted: 0,
-      progress: 0,
       lastOpened: "Just created",
     };
 
@@ -289,6 +291,46 @@ function App() {
     );
   }
 
+  // Opening a material can promote it from "not-started" to "in-progress" —
+  // but only from "not-started". A material that's already "in-progress" or
+  // "completed" should stay that way just from being reopened.
+  function handleMarkMaterialInProgress(subjectId, materialId) {
+    setSubjects((current) =>
+      current.map((subject) =>
+        subject.id === subjectId
+          ? {
+              ...subject,
+              materials: subject.materials.map((material) =>
+                material.id === materialId && material.completionStatus === "not-started"
+                  ? { ...material, completionStatus: "in-progress" }
+                  : material
+              ),
+            }
+          : subject
+      )
+    );
+  }
+
+  // Finishing a quiz records the score on the material itself (so it
+  // survives switching between Summary/Quiz/Flashcards, since those are
+  // unmounted when not the active tab) and marks the material Completed.
+  function handleCompleteMaterialQuiz(subjectId, materialId, score) {
+    setSubjects((current) =>
+      current.map((subject) =>
+        subject.id === subjectId
+          ? {
+              ...subject,
+              materials: subject.materials.map((material) =>
+                material.id === materialId
+                  ? { ...material, quizScore: score, completionStatus: "completed" }
+                  : material
+              ),
+            }
+          : subject
+      )
+    );
+  }
+
   // Switching sections (Dashboard/Subjects/Progress) always leaves the
   // Subjects list, not the details of whichever subject was open.
   function handleNavigate(pageName) {
@@ -319,6 +361,8 @@ function App() {
               onBack={() => setSelectedSubjectId(null)}
               onAddMaterial={handleAddMaterial}
               onUpdateMaterialStatus={handleUpdateMaterialStatus}
+              onMarkMaterialInProgress={handleMarkMaterialInProgress}
+              onCompleteMaterialQuiz={handleCompleteMaterialQuiz}
             />
           ) : (
             <Subjects

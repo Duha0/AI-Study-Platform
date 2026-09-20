@@ -1,4 +1,6 @@
+import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
+import CreateSubjectModal from "../components/CreateSubjectModal";
 
 /* ---------------------------------------------------------------------------
    Sample data used only on this page.
@@ -112,6 +114,12 @@ function ProgressCard({ progress }) {
 
 function Dashboard({ subjects, onCreateSubject }) {
   const previewSubjects = subjects.slice(0, 3);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  function handleCreate(name, description) {
+    onCreateSubject(name, description);
+    setIsModalOpen(false);
+  }
 
   return (
     <>
@@ -121,7 +129,11 @@ function Dashboard({ subjects, onCreateSubject }) {
           <p className="welcome-subtitle">Your study space, powered by AI.</p>
         </div>
 
-        <button type="button" className="button-primary" onClick={onCreateSubject}>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={() => setIsModalOpen(true)}
+        >
           Create Subject
         </button>
       </header>
@@ -140,6 +152,13 @@ function Dashboard({ subjects, onCreateSubject }) {
         <RecentMaterials materials={recentMaterials} />
         <ProgressCard progress={weeklyProgress} />
       </div>
+
+      {isModalOpen && (
+        <CreateSubjectModal
+          onClose={() => setIsModalOpen(false)}
+          onCreate={handleCreate}
+        />
+      )}
     </>
   );
 }

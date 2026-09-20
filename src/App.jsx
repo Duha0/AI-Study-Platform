@@ -8,7 +8,47 @@ import SubjectDetails from "./pages/SubjectDetails";
    Sample subjects
    Lives here, not in a page file, because both Dashboard (a short preview)
    and Subjects (the full list) need to read and add to the same list.
+
+   Each subject now owns its own `materials` array (previously this was one
+   shared static list defined inside SubjectDetails.jsx). Moving it here is
+   what makes "Materials" a real, per-subject count instead of a separate
+   number that could drift out of sync — the stat is just materials.length.
    --------------------------------------------------------------------------- */
+
+function createSampleMaterials() {
+  return [
+    {
+      id: 1,
+      filename: "Lecture Notes - Week 1.pdf",
+      fileType: "PDF",
+      size: "1.2 MB",
+      uploaded: "Uploaded 3 days ago",
+      description:
+        "An overview of the topics covered in the first week, including key definitions and diagrams.",
+      status: "ready",
+    },
+    {
+      id: 2,
+      filename: "Chapter Summary.pdf",
+      fileType: "PDF",
+      size: "640 KB",
+      uploaded: "Uploaded 5 days ago",
+      description:
+        "A condensed summary of the chapter's main ideas — useful for a quick review before a quiz.",
+      status: "ready",
+    },
+    {
+      id: 3,
+      filename: "Practice Problem Set.pdf",
+      fileType: "PDF",
+      size: "2.1 MB",
+      uploaded: "Uploaded 1 week ago",
+      description:
+        "A set of practice problems with varying difficulty, for testing how well the material has landed.",
+      status: "ready",
+    },
+  ];
+}
 
 const initialSubjects = [
   {
@@ -17,7 +57,7 @@ const initialSubjects = [
     description: "Reactions, mechanisms, and the structure of carbon-based compounds.",
     initial: "O",
     color: "#2E6B4F",
-    materialCount: 24,
+    materials: createSampleMaterials(),
     quizzesCompleted: 9,
     progress: 68,
     lastOpened: "Opened yesterday",
@@ -28,7 +68,7 @@ const initialSubjects = [
     description: "Vectors, matrices, and linear transformations.",
     initial: "L",
     color: "#7A5AA6",
-    materialCount: 18,
+    materials: createSampleMaterials(),
     quizzesCompleted: 5,
     progress: 41,
     lastOpened: "Opened 3 days ago",
@@ -39,7 +79,7 @@ const initialSubjects = [
     description: "Major events and turning points from ancient to modern times.",
     initial: "W",
     color: "#C08A2E",
-    materialCount: 11,
+    materials: createSampleMaterials(),
     quizzesCompleted: 2,
     progress: 15,
     lastOpened: "Opened last week",
@@ -51,6 +91,12 @@ const navItems = [
   { name: "Subjects", icon: "M4 4h9a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4zM20 4h-4v13h4z" },
   { name: "Progress", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
 ];
+
+// Colors are assigned to new subjects by cycling through this list, so each
+// one gets a distinct identifying color the same way the sample subjects do.
+// Lives here (not in a page file) because subject creation is now handled
+// in one place and shared by both Dashboard and Subjects.
+const CARD_COLORS = ["#2E6B4F", "#7A5AA6", "#C08A2E", "#3B7C99", "#B85C5C"];
 
 /* ---------------------------------------------------------------------------
    Theme helpers — unchanged from before.
@@ -189,7 +235,23 @@ function App() {
     setTheme(theme === "light" ? "dark" : "light");
   }
 
-  function handleAddSubject(newSubject) {
+  // Builds a full subject object from just a name and description, then
+  // adds it to state. Both the Dashboard and Subjects page open the same
+  // CreateSubjectModal and call this same function, so a subject created
+  // from either place ends up identical.
+  function handleCreateSubject(name, description) {
+    const newSubject = {
+      id: Date.now(), // good enough for local sample data
+      name,
+      description,
+      initial: name.charAt(0).toUpperCase(),
+      color: CARD_COLORS[subjects.length % CARD_COLORS.length],
+      materials: [],
+      quizzesCompleted: 0,
+      progress: 0,
+      lastOpened: "Just created",
+    };
+
     setSubjects((current) => [...current, newSubject]);
   }
 
@@ -202,10 +264,29 @@ function App() {
     setSelectedSubjectId((current) => (current === id ? null : current));
   }
 
-  function handleDashboardCreateClick() {
-    // The Dashboard's button stays a placeholder — the modal is only wired
-    // up on the Subjects page for this task.
-    alert("Head to Subjects to create one — that's where the form lives.");
+  function handleAddMaterial(subjectId, newMaterial) {
+    setSubjects((current) =>
+      current.map((subject) =>
+        subject.id === subjectId
+          ? { ...subject, materials: [...subject.materials, newMaterial] }
+          : subject
+      )
+    );
+  }
+
+  function handleUpdateMaterialStatus(subjectId, materialId, newStatus) {
+    setSubjects((current) =>
+      current.map((subject) =>
+        subject.id === subjectId
+          ? {
+              ...subject,
+              materials: subject.materials.map((material) =>
+                material.id === materialId ? { ...material, status: newStatus } : material
+              ),
+            }
+          : subject
+      )
+    );
   }
 
   // Switching sections (Dashboard/Subjects/Progress) always leaves the
@@ -228,7 +309,7 @@ function App() {
 
       <main className="main">
         {activePage === "Dashboard" && (
-          <Dashboard subjects={subjects} onCreateSubject={handleDashboardCreateClick} />
+          <Dashboard subjects={subjects} onCreateSubject={handleCreateSubject} />
         )}
 
         {activePage === "Subjects" &&
@@ -236,11 +317,13 @@ function App() {
             <SubjectDetails
               subject={selectedSubject}
               onBack={() => setSelectedSubjectId(null)}
+              onAddMaterial={handleAddMaterial}
+              onUpdateMaterialStatus={handleUpdateMaterialStatus}
             />
           ) : (
             <Subjects
               subjects={subjects}
-              onAddSubject={handleAddSubject}
+              onCreateSubject={handleCreateSubject}
               onSelectSubject={setSelectedSubjectId}
               onDeleteSubject={handleDeleteSubject}
             />

@@ -2,27 +2,11 @@ import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
 
-// Colors are assigned to new subjects by cycling through this list, so each
-// one gets a distinct identifying color the same way the sample subjects do.
-const CARD_COLORS = ["#2E6B4F", "#7A5AA6", "#C08A2E", "#3B7C99", "#B85C5C"];
-
-function Subjects({ subjects, onAddSubject, onSelectSubject, onDeleteSubject }) {
+function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   function handleCreate(name, description) {
-    const newSubject = {
-      id: Date.now(), // good enough for local sample data
-      name,
-      description,
-      initial: name.charAt(0).toUpperCase(),
-      color: CARD_COLORS[subjects.length % CARD_COLORS.length],
-      materialCount: 0,
-      quizzesCompleted: 0,
-      progress: 0,
-      lastOpened: "Just created",
-    };
-
-    onAddSubject(newSubject);
+    onCreateSubject(name, description);
     setIsModalOpen(false);
   }
 

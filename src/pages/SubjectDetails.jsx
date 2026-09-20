@@ -1,56 +1,102 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // The Subject Details page. It's opened by clicking a card on the Subjects
 // page and shows one subject's stats, its materials, and — once a material
 // is clicked — a preview of that material with three placeholder actions.
 //
-// Materials are static sample data for now — the same short list is shown
-// for every subject, since there's no backend yet to store real uploads.
+// `subject.materials` comes from App.jsx, since materials need to persist
+// on the subject itself (for the session) rather than live only in this
+// component's own state. Adding a new one goes through `onAddMaterial`,
+// and the processing → ready simulation goes through `onUpdateMaterialStatus`
+// — both already defined in App.jsx alongside the subject-editing handlers.
 
-const sampleMaterials = [
-  {
-    id: 1,
-    filename: "Lecture Notes - Week 1.pdf",
-    fileType: "PDF",
-    pages: 8,
-    size: "1.2 MB",
-    uploaded: "Uploaded 3 days ago",
-    description:
-      "An overview of the topics covered in the first week, including key definitions and diagrams.",
-  },
-  {
-    id: 2,
-    filename: "Chapter Summary.pdf",
-    fileType: "PDF",
-    pages: 4,
-    size: "640 KB",
-    uploaded: "Uploaded 5 days ago",
-    description:
-      "A condensed summary of the chapter's main ideas — useful for a quick review before a quiz.",
-  },
-  {
-    id: 3,
-    filename: "Practice Problem Set.pdf",
-    fileType: "PDF",
-    pages: 12,
-    size: "2.1 MB",
-    uploaded: "Uploaded 1 week ago",
-    description:
-      "A set of practice problems with varying difficulty, for testing how well the material has landed.",
-  },
-];
+const PROCESSING_DELAY_MS = 1500;
 
-function SubjectDetails({ subject, onBack }) {
+// Turns a raw byte count from the File object into something readable.
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus }) {
   const [selectedMaterialId, setSelectedMaterialId] = useState(null);
   const [actionMessage, setActionMessage] = useState(null);
+  const fileInputRef = useRef(null);
 
-  const selectedMaterial = sampleMaterials.find(
+  // Defensive guard: App.jsx only renders this page when it has found a
+  // matching subject, so this shouldn't normally happen — but if it ever
+  // does (a stale id, a subject removed elsewhere), fail safely instead of
+  // crashing on subject.color/name/etc. below.
+  if (!subject) {
+    return (
+      <>
+        <button
+          type="button"
+          className="button-secondary details-back-button"
+          onClick={onBack}
+        >
+          ← Back to Subjects
+        </button>
+        <p className="coming-soon">This subject could not be found.</p>
+      </>
+    );
+  }
+
+  // Defensive guard: fall back to an empty list if a subject somehow has
+  // no materials array yet, instead of crashing on materials.find/.length.
+  const materials = subject.materials || [];
+
+  const selectedMaterial = materials.find(
     (material) => material.id === selectedMaterialId
   );
 
+  // Simulates "processing" a newly uploaded file. While the selected
+  // material is still marked "processing", wait a moment and then flip it
+  // to "ready". This is the only faked part of upload — the file itself,
+  // its name, and its size are all real, just not sent anywhere.
+  useEffect(() => {
+    if (selectedMaterial && selectedMaterial.status === "processing") {
+      const timer = setTimeout(() => {
+        onUpdateMaterialStatus(subject.id, selectedMaterial.id, "ready");
+      }, PROCESSING_DELAY_MS);
+
+      return () => clearTimeout(timer);
+    }
+  }, [selectedMaterial, subject.id, onUpdateMaterialStatus]);
+
   function handleUploadClick() {
-    // No backend yet — this is where the real upload flow will go.
-    alert("Uploading isn't wired up yet.");
+    // The actual file picker is the hidden <input> below this button —
+    // this just opens it.
+    fileInputRef.current.click();
+  }
+
+  function handleFileChange(event) {
+    const file = event.target.files[0];
+    event.target.value = ""; // lets the same file be chosen again later
+
+    if (!file) {
+      return; // the person closed the picker without choosing anything
+    }
+
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      alert("Please choose a PDF file.");
+      return;
+    }
+
+    const newMaterial = {
+      id: Date.now(), // good enough for local sample data
+      filename: file.name,
+      fileType: "PDF",
+      size: formatFileSize(file.size),
+      uploaded: "Uploaded just now",
+      description: "",
+      status: "processing",
+    };
+
+    onAddMaterial(subject.id, newMaterial);
+    setSelectedMaterialId(newMaterial.id);
+    setActionMessage(null);
   }
 
   function handleSelectMaterial(material) {
@@ -93,12 +139,22 @@ function SubjectDetails({ subject, onBack }) {
         <button type="button" className="button-primary" onClick={handleUploadClick}>
           Upload Material
         </button>
+
+        {/* Hidden — the button above opens it. Restricted to PDFs, per the
+            requirement that only PDF materials are supported for now. */}
+        <input
+          type="file"
+          accept="application/pdf,.pdf"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          style={{ display: "none" }}
+        />
       </header>
 
       <section className="section">
         <div className="stats-grid">
           <article className="stat-card">
-            <p className="stat-value">{subject.materialCount}</p>
+            <p className="stat-value">{materials.length}</p>
             <p className="stat-label">Materials</p>
           </article>
 
@@ -117,35 +173,39 @@ function SubjectDetails({ subject, onBack }) {
       <section className="section">
         <h2 className="section-title">Materials</h2>
 
-        <ul className="material-list">
-          {sampleMaterials.map((material) => (
-            <li key={material.id}>
-              <button
-                type="button"
-                className={
-                  material.id === selectedMaterialId
-                    ? "material-row material-row-button material-row-active"
-                    : "material-row material-row-button"
-                }
-                onClick={() => handleSelectMaterial(material)}
-              >
-                <span
-                  className="material-dot"
-                  style={{ backgroundColor: subject.color }}
-                />
+        {materials.length === 0 ? (
+          <p className="coming-soon">No materials yet.</p>
+        ) : (
+          <ul className="material-list">
+            {materials.map((material) => (
+              <li key={material.id}>
+                <button
+                  type="button"
+                  className={
+                    material.id === selectedMaterialId
+                      ? "material-row material-row-button material-row-active"
+                      : "material-row material-row-button"
+                  }
+                  onClick={() => handleSelectMaterial(material)}
+                >
+                  <span
+                    className="material-dot"
+                    style={{ backgroundColor: subject.color }}
+                  />
 
-                <div className="material-text">
-                  <p className="material-title">{material.filename}</p>
-                  <p className="material-meta">
-                    {material.pages} pages · {material.size}
-                  </p>
-                </div>
+                  <div className="material-text">
+                    <p className="material-title">{material.filename}</p>
+                    <p className="material-meta">
+                      {material.fileType} · {material.size}
+                    </p>
+                  </div>
 
-                <span className="material-when">{material.uploaded}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
+                  <span className="material-when">{material.uploaded}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       {selectedMaterial && (
@@ -154,10 +214,24 @@ function SubjectDetails({ subject, onBack }) {
 
           <article className="material-preview">
             <p className="material-preview-filename">{selectedMaterial.filename}</p>
-            <span className="material-preview-type">{selectedMaterial.fileType}</span>
+
+            <div className="material-preview-badges">
+              <span className="material-preview-type">{selectedMaterial.fileType}</span>
+              <span
+                className={
+                  selectedMaterial.status === "processing"
+                    ? "material-status-badge material-status-processing"
+                    : "material-status-badge material-status-ready"
+                }
+              >
+                {selectedMaterial.status === "processing"
+                  ? "Processing material…"
+                  : "Ready"}
+              </span>
+            </div>
 
             <p className="material-preview-description">
-              {selectedMaterial.description}
+              {selectedMaterial.description || "No description added yet."}
             </p>
 
             <div className="material-preview-actions">

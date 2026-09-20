@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import MaterialSummary from "../components/MaterialSummary";
+import MaterialQuiz from "../components/MaterialQuiz";
+import MaterialFlashcards from "../components/MaterialFlashcards";
 
 // The Subject Details page. It's opened by clicking a card on the Subjects
 // page and shows one subject's stats, its materials, and — once a material
@@ -21,7 +24,7 @@ function formatFileSize(bytes) {
 
 function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus }) {
   const [selectedMaterialId, setSelectedMaterialId] = useState(null);
-  const [actionMessage, setActionMessage] = useState(null);
+  const [activeResourceTab, setActiveResourceTab] = useState("summary");
   const fileInputRef = useRef(null);
 
   // Defensive guard: App.jsx only renders this page when it has found a
@@ -96,18 +99,12 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
 
     onAddMaterial(subject.id, newMaterial);
     setSelectedMaterialId(newMaterial.id);
-    setActionMessage(null);
+    setActiveResourceTab("summary");
   }
 
   function handleSelectMaterial(material) {
     setSelectedMaterialId(material.id);
-    setActionMessage(null); // clear any leftover message from a different material
-  }
-
-  function handleActionClick(actionLabel) {
-    // No AI integration yet — these three buttons just show that they were
-    // clicked. The real generation logic comes later.
-    setActionMessage(`${actionLabel} is coming soon.`);
+    setActiveResourceTab("summary"); // always start a newly opened material on Summary
   }
 
   return (
@@ -234,31 +231,55 @@ function SubjectDetails({ subject, onBack, onAddMaterial, onUpdateMaterialStatus
               {selectedMaterial.description || "No description added yet."}
             </p>
 
+            {/* These three buttons double as tabs: the active one is styled
+                as the primary button, the other two as secondary. Clicking
+                one just switches which resource panel is shown below —
+                nothing here calls an AI API. */}
             <div className="material-preview-actions">
               <button
                 type="button"
-                className="button-secondary"
-                onClick={() => handleActionClick("Summary generation")}
+                className={
+                  activeResourceTab === "summary" ? "button-primary" : "button-secondary"
+                }
+                onClick={() => setActiveResourceTab("summary")}
               >
                 Generate Summary
               </button>
               <button
                 type="button"
-                className="button-secondary"
-                onClick={() => handleActionClick("Quiz generation")}
+                className={
+                  activeResourceTab === "quiz" ? "button-primary" : "button-secondary"
+                }
+                onClick={() => setActiveResourceTab("quiz")}
               >
                 Generate Quiz
               </button>
               <button
                 type="button"
-                className="button-secondary"
-                onClick={() => handleActionClick("Flashcards")}
+                className={
+                  activeResourceTab === "flashcards" ? "button-primary" : "button-secondary"
+                }
+                onClick={() => setActiveResourceTab("flashcards")}
               >
                 Flashcards
               </button>
             </div>
 
-            {actionMessage && <p className="material-preview-status">{actionMessage}</p>}
+            {/* Keyed by the material's id so switching to a different
+                material remounts whichever panel is showing — that resets
+                its internal state (quiz progress, flipped card, etc.)
+                instead of carrying it over from the previous material. */}
+            <div className="resource-panel">
+              {activeResourceTab === "summary" && (
+                <MaterialSummary key={selectedMaterial.id} />
+              )}
+              {activeResourceTab === "quiz" && (
+                <MaterialQuiz key={selectedMaterial.id} />
+              )}
+              {activeResourceTab === "flashcards" && (
+                <MaterialFlashcards key={selectedMaterial.id} />
+              )}
+            </div>
           </article>
         </section>
       )}

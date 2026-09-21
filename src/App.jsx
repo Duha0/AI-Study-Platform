@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import "./App.css";
+import Landing from "./pages/Landing";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
@@ -130,6 +134,24 @@ function saveTheme(theme) {
 }
 
 /* ---------------------------------------------------------------------------
+   Login state — same wrapped-localStorage pattern as theme above. This is
+   the only thing that gates which pages are reachable; the account data
+   itself (name/email/password) and onboarding answers are read and written
+   directly by the Register/Login/Onboarding pages, since App.jsx doesn't
+   need them for anything.
+   --------------------------------------------------------------------------- */
+
+const LOGIN_KEY = "studyai-logged-in";
+
+function getSavedLoginState() {
+  try {
+    return localStorage.getItem(LOGIN_KEY) === "true";
+  } catch (error) {
+    return false;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Small building blocks used only in this file.
    --------------------------------------------------------------------------- */
 
@@ -169,7 +191,7 @@ function ThemeToggle({ theme, onToggle }) {
   );
 }
 
-function Sidebar({ active, onNavigate, theme, onToggleTheme }) {
+function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -214,6 +236,10 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme }) {
             <p className="sidebar-plan">Free plan</p>
           </div>
         </div>
+
+        <button type="button" className="sidebar-logout" onClick={onLogout}>
+          Log Out
+        </button>
       </div>
     </aside>
   );
@@ -224,7 +250,13 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme }) {
    --------------------------------------------------------------------------- */
 
 function App() {
-  const [activePage, setActivePage] = useState("Dashboard");
+  const [isLoggedIn, setIsLoggedIn] = useState(getSavedLoginState);
+  // Logged-in visitors land on Dashboard; logged-out ones land on Landing.
+  // Both read the same saved login state, so a refresh doesn't bounce a
+  // logged-in person back out to the Landing page.
+  const [activePage, setActivePage] = useState(() =>
+    getSavedLoginState() ? "Dashboard" : "Landing"
+  );
   const [theme, setTheme] = useState(getSavedTheme);
   const [subjects, setSubjects] = useState(initialSubjects);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
@@ -331,14 +363,67 @@ function App() {
     );
   }
 
-  // Switching sections (Dashboard/Subjects/Progress) always leaves the
-  // Subjects list, not the details of whichever subject was open.
+  // The one navigation function for the whole app — used for the sidebar
+  // (Dashboard/Subjects/Progress) and for moving between the pre-login
+  // pages (Landing/Register/Login/Onboarding). It always also leaves the
+  // Subjects list rather than the details of whichever subject was open.
   function handleNavigate(pageName) {
     setActivePage(pageName);
     setSelectedSubjectId(null);
   }
 
+  // Shared by both "ways in": a successful Login, and finishing Onboarding
+  // right after Register. Either way, the person is now logged in and
+  // lands on Dashboard.
+  function handleAuthenticated() {
+    setIsLoggedIn(true);
+    try {
+      localStorage.setItem(LOGIN_KEY, "true");
+    } catch (error) {
+      // The session still works even if this couldn't be saved — it just
+      // won't be remembered across a refresh.
+    }
+    handleNavigate("Dashboard");
+  }
+
+  function handleLogout() {
+    setIsLoggedIn(false);
+    try {
+      localStorage.removeItem(LOGIN_KEY);
+    } catch (error) {
+      // Not critical — isLoggedIn is already false for this session.
+    }
+    // subjects/materials state is untouched here on purpose — logging out
+    // never clears what's been created.
+    handleNavigate("Landing");
+  }
+
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
+
+  if (!isLoggedIn) {
+    return (
+      <>
+        {activePage === "Register" ? (
+          <Register
+            onRegistered={() => handleNavigate("Onboarding")}
+            onNavigateLogin={() => handleNavigate("Login")}
+          />
+        ) : activePage === "Login" ? (
+          <Login
+            onLoginSuccess={handleAuthenticated}
+            onNavigateRegister={() => handleNavigate("Register")}
+          />
+        ) : activePage === "Onboarding" ? (
+          <Onboarding onComplete={handleAuthenticated} />
+        ) : (
+          <Landing
+            onGetStarted={() => handleNavigate("Register")}
+            onLogIn={() => handleNavigate("Login")}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <div className="app">
@@ -347,6 +432,7 @@ function App() {
         onNavigate={handleNavigate}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onLogout={handleLogout}
       />
 
       <main className="main">

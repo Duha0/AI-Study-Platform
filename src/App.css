@@ -240,6 +240,21 @@
   color: var(--ink-soft);
 }
 
+.sidebar-logout {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-logout:hover {
+  color: var(--danger);
+}
+
 /* --------------------------------------------------------------------------
    Welcome header
    -------------------------------------------------------------------------- */
@@ -956,7 +971,8 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -968,7 +984,8 @@
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   outline: 2px solid var(--green);
   outline-offset: 1px;
 }
@@ -978,6 +995,183 @@
   justify-content: flex-end;
   gap: 10px;
   margin-top: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   Auth pages (Register / Login / Onboarding) — a simple centered card,
+   the same visual language as .modal-card but as a standalone page
+   instead of an overlay.
+   -------------------------------------------------------------------------- */
+
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px;
+  background-color: var(--paper);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 32px;
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.auth-heading {
+  margin: 0 0 8px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.auth-subtitle {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.auth-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.auth-switch {
+  margin: 18px 0 0;
+  font-size: 14px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green);
+  font: inherit;
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.link-button:hover {
+  text-decoration: underline;
+}
+
+.form-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   Landing page
+   -------------------------------------------------------------------------- */
+
+.landing-page {
+  min-height: 100vh;
+  background-color: var(--paper);
+  color: var(--ink);
+}
+
+.landing-header {
+  padding: 24px clamp(20px, 5vw, 64px);
+}
+
+.landing-hero {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px clamp(20px, 5vw, 64px) 80px;
+  text-align: center;
+}
+
+.landing-hero-title {
+  margin: 0 0 18px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.landing-hero-subtitle {
+  margin: 0 0 28px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.landing-hero-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.landing-hero-actions .button-primary,
+.landing-hero-actions .button-secondary {
+  padding: 13px 26px;
+  font-size: 16px;
+}
+
+.landing-features {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 64px) 80px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--gap);
+}
+
+.feature-card {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+}
+
+.feature-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background-color: var(--accent-soft);
+  color: var(--accent-fg);
+}
+
+.feature-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.feature-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.feature-description {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+.landing-footer {
+  padding: 24px clamp(20px, 5vw, 64px);
+  border-top: 1px solid var(--line);
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-soft);
 }
 
 /* ==========================================================================
@@ -1165,5 +1359,18 @@
 
   .flashcard-controls .button-secondary {
     width: 48%;
+  }
+
+  .landing-hero-actions {
+    flex-direction: column;
+  }
+
+  .landing-hero-actions .button-primary,
+  .landing-hero-actions .button-secondary {
+    width: 100%;
+  }
+
+  .auth-card {
+    padding: 24px;
   }
 }

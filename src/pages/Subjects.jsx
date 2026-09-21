@@ -38,16 +38,33 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
       </header>
 
       <section className="section">
-        <div className="subject-grid">
-          {subjects.map((subject) => (
-            <SubjectCard
-              key={subject.id}
-              subject={subject}
-              onOpen={() => onSelectSubject(subject.id)}
-              onDelete={() => handleDeleteClick(subject)}
-            />
-          ))}
-        </div>
+        {subjects.length === 0 ? (
+          <div className="empty-state">
+            <h2 className="empty-state-title">No subjects yet</h2>
+            <p className="empty-state-text">
+              Create a subject to start uploading materials and generating
+              summaries, quizzes, and flashcards.
+            </p>
+            <button
+              type="button"
+              className="button-primary"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Create Subject
+            </button>
+          </div>
+        ) : (
+          <div className="subject-grid">
+            {subjects.map((subject) => (
+              <SubjectCard
+                key={subject.id}
+                subject={subject}
+                onOpen={() => onSelectSubject(subject.id)}
+                onDelete={() => handleDeleteClick(subject)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {isModalOpen && (

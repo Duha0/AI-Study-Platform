@@ -3,118 +3,28 @@ import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
 
 /* ---------------------------------------------------------------------------
-   Sample data used only on this page.
-   Subjects live in App.jsx now, since the Subjects page needs them too.
-   --------------------------------------------------------------------------- */
-
-const recentMaterials = [
-  {
-    id: 1,
-    title: "Alkene reaction mechanisms",
-    subject: "Organic Chemistry",
-    color: "#2E6B4F",
-    kind: "Summary",
-    when: "2 hours ago",
-  },
-  {
-    id: 2,
-    title: "Eigenvalues practice set",
-    subject: "Linear Algebra",
-    color: "#7A5AA6",
-    kind: "Quiz",
-    when: "Yesterday",
-  },
-  {
-    id: 3,
-    title: "Lecture 7 — matrix transformations",
-    subject: "Linear Algebra",
-    color: "#7A5AA6",
-    kind: "Notes",
-    when: "2 days ago",
-  },
-  {
-    id: 4,
-    title: "Causes of the First World War",
-    subject: "World History",
-    color: "#C08A2E",
-    kind: "Flashcards",
-    when: "5 days ago",
-  },
-];
-
-const weeklyProgress = {
-  hoursStudied: 12,
-  hoursGoal: 18,
-  streakDays: 5,
-};
-
-function RecentMaterials({ materials }) {
-  return (
-    <section className="section">
-      <h2 className="section-title">Recent Materials</h2>
-
-      <ul className="material-list">
-        {materials.map((material) => (
-          <li key={material.id} className="material-row">
-            <span
-              className="material-dot"
-              style={{ backgroundColor: material.color }}
-            />
-
-            <div className="material-text">
-              <p className="material-title">{material.title}</p>
-              <p className="material-meta">
-                {material.subject} · {material.kind}
-              </p>
-            </div>
-
-            <span className="material-when">{material.when}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function ProgressCard({ progress }) {
-  const percent = Math.min(
-    Math.round((progress.hoursStudied / progress.hoursGoal) * 100),
-    100
-  );
-
-  return (
-    <section className="section">
-      <h2 className="section-title">This Week</h2>
-
-      <article className="progress-card">
-        <p className="progress-number">
-          {progress.hoursStudied}
-          <span className="progress-goal"> / {progress.hoursGoal} hrs</span>
-        </p>
-        <p className="progress-label">studied toward your weekly goal</p>
-
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: percent + "%" }} />
-        </div>
-
-        <p className="progress-streak">
-          {progress.streakDays} day streak — keep it going
-        </p>
-      </article>
-    </section>
-  );
-}
-
-/* ---------------------------------------------------------------------------
    The Dashboard page
-   `subjects` comes from App.jsx so the preview here always matches the full
-   Subjects page. Only the first three are shown — this is a preview, the
-   Subjects page is where the complete list lives.
+   `subjects` comes from App.jsx — the same array the Subjects page and
+   Subject Details use, so every number here is computed fresh from it on
+   each render rather than tracked separately. Nothing on this page is
+   hard-coded.
    --------------------------------------------------------------------------- */
 
-function Dashboard({ subjects, onCreateSubject }) {
-  const previewSubjects = subjects.slice(0, 3);
+function Dashboard({ subjects, onCreateSubject, userName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const hasSubjects = subjects.length > 0;
+  const allMaterials = subjects.flatMap((subject) => subject.materials);
+  const totalMaterials = allMaterials.length;
+  const completedMaterials = allMaterials.filter(
+    (material) => material.completionStatus === "completed"
+  ).length;
+  const overallProgressPercent =
+    totalMaterials === 0 ? 0 : Math.round((completedMaterials / totalMaterials) * 100);
+
+  // A short preview, not the full list — the Subjects page is where every
+  // subject lives.
+  const recentSubjects = subjects.slice(0, 3);
 
   function handleCreate(name, description) {
     onCreateSubject(name, description);
@@ -125,7 +35,9 @@ function Dashboard({ subjects, onCreateSubject }) {
     <>
       <header className="welcome">
         <div>
-          <h1 className="welcome-title">Welcome back 👋</h1>
+          <h1 className="welcome-title">
+            Welcome back{userName ? `, ${userName}` : ""} 👋
+          </h1>
           <p className="welcome-subtitle">Your study space, powered by AI.</p>
         </div>
 
@@ -138,20 +50,60 @@ function Dashboard({ subjects, onCreateSubject }) {
         </button>
       </header>
 
-      <section className="section">
-        <h2 className="section-title">Your Subjects</h2>
+      {hasSubjects ? (
+        <>
+          <section className="section">
+            <div className="stats-grid">
+              <article className="stat-card">
+                <p className="stat-value">{subjects.length}</p>
+                <p className="stat-label">Total Subjects</p>
+              </article>
 
-        <div className="subject-grid">
-          {previewSubjects.map((subject) => (
-            <SubjectCard key={subject.id} subject={subject} />
-          ))}
-        </div>
-      </section>
+              <article className="stat-card">
+                <p className="stat-value">{totalMaterials}</p>
+                <p className="stat-label">Total Materials</p>
+              </article>
 
-      <div className="lower-grid">
-        <RecentMaterials materials={recentMaterials} />
-        <ProgressCard progress={weeklyProgress} />
-      </div>
+              <article className="stat-card">
+                <p className="stat-value">{completedMaterials}</p>
+                <p className="stat-label">Completed Materials</p>
+              </article>
+
+              <article className="stat-card">
+                <p className="stat-value">{overallProgressPercent}%</p>
+                <p className="stat-label">Overall Progress</p>
+              </article>
+            </div>
+          </section>
+
+          <section className="section">
+            <h2 className="section-title">Recent Subjects</h2>
+
+            <div className="subject-grid">
+              {recentSubjects.map((subject) => (
+                <SubjectCard key={subject.id} subject={subject} />
+              ))}
+            </div>
+          </section>
+        </>
+      ) : (
+        <section className="section">
+          <div className="empty-state">
+            <h2 className="empty-state-title">Create your first subject</h2>
+            <p className="empty-state-text">
+              Subjects are where your materials, summaries, quizzes, and
+              flashcards will live. Create one to get started.
+            </p>
+            <button
+              type="button"
+              className="button-primary"
+              onClick={() => setIsModalOpen(true)}
+            >
+              Create Subject
+            </button>
+          </div>
+        </section>
+      )}
 
       {isModalOpen && (
         <CreateSubjectModal

@@ -151,6 +151,38 @@ function getSavedLoginState() {
   }
 }
 
+// Reads the registered user's name for display (sidebar, Dashboard welcome
+// message). Same "studyai-user" key Register.jsx writes and Login.jsx
+// reads — this is read-only here, it doesn't add a second place that
+// tracks *whether* someone is logged in. isLoggedIn/LOGIN_KEY above stays
+// the one and only source of truth for that.
+const USER_KEY = "studyai-user";
+
+function getSavedUserName() {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    const user = raw ? JSON.parse(raw) : null;
+    return user && user.fullName ? user.fullName : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+// Initials for the sidebar avatar, computed from the same name — so it
+// can never show initials that don't match the name next to them.
+function getInitials(name) {
+  if (!name) return "S";
+  const parts = name.trim().split(/\s+/);
+  const initials = (parts[0][0] || "") + (parts[1] ? parts[1][0] : "");
+  return initials.toUpperCase() || "S";
+}
+
+// The pages that require being logged in. Used only as a defensive check —
+// in normal use the app never sets activePage to one of these while
+// logged out (see the useEffect in App below) — but it makes that
+// guarantee explicit and keeps it safe even if that ever changes.
+const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress"];
+
 /* ---------------------------------------------------------------------------
    Small building blocks used only in this file.
    --------------------------------------------------------------------------- */
@@ -191,7 +223,7 @@ function ThemeToggle({ theme, onToggle }) {
   );
 }
 
-function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout }) {
+function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
@@ -230,9 +262,9 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout }) {
         <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 
         <div className="sidebar-user-row">
-          <div className="sidebar-avatar">AM</div>
+          <div className="sidebar-avatar">{getInitials(userName)}</div>
           <div>
-            <p className="sidebar-user">Amara M.</p>
+            <p className="sidebar-user">{userName || "Student"}</p>
             <p className="sidebar-plan">Free plan</p>
           </div>
         </div>
@@ -260,11 +292,23 @@ function App() {
   const [theme, setTheme] = useState(getSavedTheme);
   const [subjects, setSubjects] = useState(initialSubjects);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+  const [userName, setUserName] = useState(getSavedUserName);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     saveTheme(theme);
   }, [theme]);
+
+  // Defensive safeguard for the protected pages: the app never sets
+  // activePage to one of these while logged out through its own buttons,
+  // but if isLoggedIn ever becomes false while one is showing (or vice
+  // versa becomes relevant later), this brings the two back in sync
+  // instead of leaving a protected page rendered to a logged-out visitor.
+  useEffect(() => {
+    if (!isLoggedIn && PROTECTED_PAGES.includes(activePage)) {
+      setActivePage("Landing");
+    }
+  }, [isLoggedIn, activePage]);
 
   function toggleTheme() {
     setTheme(theme === "light" ? "dark" : "light");
@@ -377,6 +421,7 @@ function App() {
   // lands on Dashboard.
   function handleAuthenticated() {
     setIsLoggedIn(true);
+    setUserName(getSavedUserName()); // pick up the name Register/Login just saved
     try {
       localStorage.setItem(LOGIN_KEY, "true");
     } catch (error) {
@@ -388,6 +433,7 @@ function App() {
 
   function handleLogout() {
     setIsLoggedIn(false);
+    setUserName(null); // clear the displayed name only — the saved account stays
     try {
       localStorage.removeItem(LOGIN_KEY);
     } catch (error) {
@@ -433,11 +479,16 @@ function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onLogout={handleLogout}
+        userName={userName}
       />
 
       <main className="main">
         {activePage === "Dashboard" && (
-          <Dashboard subjects={subjects} onCreateSubject={handleCreateSubject} />
+          <Dashboard
+            subjects={subjects}
+            onCreateSubject={handleCreateSubject}
+            userName={userName}
+          />
         )}
 
         {activePage === "Subjects" &&

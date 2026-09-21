@@ -459,6 +459,33 @@
 }
 
 /* --------------------------------------------------------------------------
+   Empty state — shown on Dashboard and Subjects when there are no
+   subjects yet.
+   -------------------------------------------------------------------------- */
+
+.empty-state {
+  padding: 48px 24px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius);
+  background-color: var(--surface);
+  text-align: center;
+}
+
+.empty-state-title {
+  margin: 0 0 8px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.empty-state-text {
+  max-width: 380px;
+  margin: 0 auto 20px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
    Subject Details page
    -------------------------------------------------------------------------- */
 

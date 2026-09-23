@@ -33,6 +33,7 @@ function SubjectDetails({
   subject,
   onBack,
   onAddMaterial,
+  onDeleteMaterial,
   onUpdateMaterialStatus,
   onMarkMaterialInProgress,
   onCompleteMaterialQuiz,
@@ -130,6 +131,24 @@ function SubjectDetails({
     onMarkMaterialInProgress(subject.id, material.id);
   }
 
+  function handleDeleteMaterial(material) {
+    const confirmed = window.confirm(
+      `Delete "${material.filename}"? This can't be undone.`
+    );
+    if (!confirmed) {
+      return; // Cancel — nothing changes
+    }
+
+    onDeleteMaterial(subject.id, material.id);
+
+    // Clear the selection if the deleted material was the one open, so the
+    // preview below doesn't keep referencing a material that no longer
+    // exists.
+    if (material.id === selectedMaterialId) {
+      setSelectedMaterialId(null);
+    }
+  }
+
   return (
     <>
       <button
@@ -196,11 +215,17 @@ function SubjectDetails({
         <h2 className="section-title">Materials</h2>
 
         {materials.length === 0 ? (
-          <p className="coming-soon">No materials yet.</p>
+          <div className="empty-state">
+            <h2 className="empty-state-title">No study materials yet</h2>
+            <p className="empty-state-text">Upload a PDF to start learning.</p>
+            <button type="button" className="button-primary" onClick={handleUploadClick}>
+              Upload Material
+            </button>
+          </div>
         ) : (
           <ul className="material-list">
             {materials.map((material) => (
-              <li key={material.id}>
+              <li key={material.id} className="material-row-shell">
                 <button
                   type="button"
                   className={
@@ -219,6 +244,15 @@ function SubjectDetails({
                     <div className="material-title-row">
                       <p className="material-title">{material.filename}</p>
                       <span
+                        className={
+                          material.status === "processing"
+                            ? "material-status-badge material-status-processing"
+                            : "material-status-badge material-status-ready"
+                        }
+                      >
+                        {material.status === "processing" ? "Processing" : "Ready"}
+                      </span>
+                      <span
                         className={`completion-badge completion-${material.completionStatus || "not-started"}`}
                       >
                         {COMPLETION_LABELS[material.completionStatus] || COMPLETION_LABELS["not-started"]}
@@ -231,11 +265,43 @@ function SubjectDetails({
 
                   <span className="material-when">{material.uploaded}</span>
                 </button>
+
+                <button
+                  type="button"
+                  className="material-delete-button"
+                  onClick={() => handleDeleteMaterial(material)}
+                  aria-label={`Delete ${material.filename}`}
+                  title="Delete material"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.7"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-1 0v14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6h12z" />
+                  </svg>
+                </button>
               </li>
             ))}
           </ul>
         )}
       </section>
+
+      {!selectedMaterial && materials.length > 0 && (
+        <section className="section">
+          <div className="empty-state">
+            <h2 className="empty-state-title">Select a material</h2>
+            <p className="empty-state-text">
+              Choose a material from the list above to see its preview and
+              open its Summary, Quiz, or Flashcards.
+            </p>
+          </div>
+        </section>
+      )}
 
       {selectedMaterial && (
         <section className="section">

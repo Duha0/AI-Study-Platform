@@ -638,6 +638,45 @@
   color: var(--accent-fg);
 }
 
+/* Wraps a material row plus its delete button as flex siblings — not one
+   nested inside the other, since the row itself is already a <button>
+   (selects the material) and a <button> can't contain another <button>. */
+.material-row-shell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.material-row-shell .material-row-button {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+}
+
+.material-delete-button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-right: 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.material-delete-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.material-delete-button:hover {
+  background-color: var(--danger-soft);
+  color: var(--danger);
+}
+
 .material-meta {
   margin: 3px 0 0;
   font-size: 13px;
@@ -1096,6 +1135,41 @@
   background-color: var(--danger-soft);
   color: var(--danger);
   font-size: 13px;
+}
+
+.form-success {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background-color: var(--accent-soft);
+  color: var(--accent-fg);
+  font-size: 13px;
+}
+
+.field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Profile / Settings page
+   -------------------------------------------------------------------------- */
+
+.profile-form {
+  max-width: 440px;
+}
+
+.settings-subheading {
+  margin: 24px 0 12px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 /* --------------------------------------------------------------------------

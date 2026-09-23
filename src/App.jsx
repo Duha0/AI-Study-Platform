@@ -7,6 +7,7 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
+import Profile from "./pages/Profile";
 
 /* ---------------------------------------------------------------------------
    Sample subjects
@@ -97,6 +98,10 @@ const navItems = [
   { name: "Dashboard", icon: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" },
   { name: "Subjects", icon: "M4 4h9a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4zM20 4h-4v13h4z" },
   { name: "Progress", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
+  {
+    name: "Profile",
+    icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20c0-4.2 3.4-7 7.5-7s7.5 2.8 7.5 7",
+  },
 ];
 
 // Colors are assigned to new subjects by cycling through this list, so each
@@ -181,7 +186,7 @@ function getInitials(name) {
 // in normal use the app never sets activePage to one of these while
 // logged out (see the useEffect in App below) — but it makes that
 // guarantee explicit and keeps it safe even if that ever changes.
-const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress"];
+const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress", "Profile"];
 
 /* ---------------------------------------------------------------------------
    Small building blocks used only in this file.
@@ -314,6 +319,14 @@ function App() {
     setTheme(theme === "light" ? "dark" : "light");
   }
 
+  // Used by the Profile/Settings page, which shows Light Mode and Dark
+  // Mode as two separate buttons rather than one toggle — this sets a
+  // specific value instead of flipping, but it's the exact same `theme`
+  // state and the exact same useEffect above that applies it and saves it.
+  function handleSetTheme(value) {
+    setTheme(value);
+  }
+
   // Builds a full subject object from just a name and description, then
   // adds it to state. Both the Dashboard and Subjects page open the same
   // CreateSubjectModal and call this same function, so a subject created
@@ -347,6 +360,22 @@ function App() {
       current.map((subject) =>
         subject.id === subjectId
           ? { ...subject, materials: [...subject.materials, newMaterial] }
+          : subject
+      )
+    );
+  }
+
+  // Only ever touches the one matching subject's materials array — every
+  // other subject's map() branch returns that subject unchanged, so this
+  // can never affect materials belonging to a different subject.
+  function handleDeleteMaterial(subjectId, materialId) {
+    setSubjects((current) =>
+      current.map((subject) =>
+        subject.id === subjectId
+          ? {
+              ...subject,
+              materials: subject.materials.filter((material) => material.id !== materialId),
+            }
           : subject
       )
     );
@@ -497,6 +526,7 @@ function App() {
               subject={selectedSubject}
               onBack={() => setSelectedSubjectId(null)}
               onAddMaterial={handleAddMaterial}
+              onDeleteMaterial={handleDeleteMaterial}
               onUpdateMaterialStatus={handleUpdateMaterialStatus}
               onMarkMaterialInProgress={handleMarkMaterialInProgress}
               onCompleteMaterialQuiz={handleCompleteMaterialQuiz}
@@ -512,6 +542,15 @@ function App() {
 
         {activePage === "Progress" && (
           <p className="coming-soon">Progress tracking is coming soon.</p>
+        )}
+
+        {activePage === "Profile" && (
+          <Profile
+            theme={theme}
+            onSetTheme={handleSetTheme}
+            onLogout={handleLogout}
+            onProfileUpdated={() => setUserName(getSavedUserName())}
+          />
         )}
       </main>
     </div>

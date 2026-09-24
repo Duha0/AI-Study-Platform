@@ -1,11 +1,10 @@
 import { useState } from "react";
+import { writeUser } from "../lib/storage";
 
-// Very small, frontend-only "account" storage. There's no backend yet, so
-// this is just enough to let Login later check "does this match what was
-// registered" — it's not secure and isn't meant to be; real auth comes
-// when a backend exists.
-const USER_KEY = "studyai-user";
-
+// The account object itself is stored by lib/storage.js (readUser/writeUser);
+// there's no backend yet, so this is just enough to let Login later check
+// "does this match what was registered" — it's not secure and isn't meant
+// to be; real auth comes when a backend exists.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function Register({ onRegistered, onNavigateLogin }) {
@@ -35,12 +34,7 @@ function Register({ onRegistered, onNavigateLogin }) {
 
     const user = { fullName: fullName.trim(), email: email.trim(), password };
 
-    try {
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-    } catch (storageError) {
-      // If storage fails (private browsing, full storage), there's nothing
-      // useful to save — but the person can still continue this session.
-    }
+    writeUser(user);
 
     setError(null);
     onRegistered();

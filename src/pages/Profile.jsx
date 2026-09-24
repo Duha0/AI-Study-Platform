@@ -1,30 +1,16 @@
 import { useState } from "react";
+import {
+  readUser,
+  writeUser,
+  readOnboarding,
+  writeOnboarding,
+  STUDY_LEVELS,
+} from "../lib/storage";
 
-// Same keys Register.jsx, Login.jsx, and Onboarding.jsx already use — this
-// page reads and writes the exact same stored objects, it doesn't create a
-// second copy of the user or onboarding data anywhere.
-const USER_KEY = "studyai-user";
-const ONBOARDING_KEY = "studyai-onboarding";
-
-const STUDY_LEVELS = ["High School", "University", "Self Learner"];
-
-function readStoredUser() {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (error) {
-    return {};
-  }
-}
-
-function readStoredOnboarding() {
-  try {
-    const raw = localStorage.getItem(ONBOARDING_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch (error) {
-    return {};
-  }
-}
+// All keys and safe storage access live in lib/storage.js — this page reads
+// and writes the exact same user/onboarding objects as Register, Login, and
+// Onboarding, through the same helpers. STUDY_LEVELS is shared with
+// Onboarding's dropdown so the two selects can never drift apart.
 
 // `theme`/`onSetTheme` and `onLogout` come straight from App.jsx — this
 // page reuses the exact same theme state and logout logic the Sidebar
@@ -32,10 +18,10 @@ function readStoredOnboarding() {
 function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
   // Read once, on mount, the same way Register/Login/Onboarding read their
   // own saved values.
-  const [email] = useState(() => readStoredUser().email || "");
-  const [fullName, setFullName] = useState(() => readStoredUser().fullName || "");
-  const [studying, setStudying] = useState(() => readStoredOnboarding().subject || "");
-  const [level, setLevel] = useState(() => readStoredOnboarding().level || STUDY_LEVELS[0]);
+  const [email] = useState(() => readUser().email || "");
+  const [fullName, setFullName] = useState(() => readUser().fullName || "");
+  const [studying, setStudying] = useState(() => readOnboarding().subject || "");
+  const [level, setLevel] = useState(() => readOnboarding().level || STUDY_LEVELS[0]);
   const [feedback, setFeedback] = useState(null); // { type: "error" | "success", text }
 
   function handleSubmit(event) {
@@ -49,16 +35,8 @@ function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
     // Spread the existing stored user so email/password are carried over
     // untouched — this updates the one account object, it doesn't replace
     // it with a new one.
-    const updatedUser = { ...readStoredUser(), fullName: fullName.trim() };
-    const updatedOnboarding = { subject: studying.trim(), level };
-
-    try {
-      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
-      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(updatedOnboarding));
-    } catch (storageError) {
-      // The fields on screen still reflect the edit for this session even
-      // if it couldn't be saved.
-    }
+    writeUser({ ...readUser(), fullName: fullName.trim() });
+    writeOnboarding({ subject: studying.trim(), level });
 
     onProfileUpdated(); // tells App.jsx to re-read the name for the sidebar/Dashboard
     setFeedback({ type: "success", text: "Changes saved." });

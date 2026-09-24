@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 // The Summary tab inside Material Preview. There's no AI backend yet, so
 // clicking Generate just waits a moment and then shows a static, sample
@@ -22,9 +22,22 @@ function MaterialSummary() {
   // "idle" | "generating" | "ready"
   const [status, setStatus] = useState("idle");
 
+  // The generation delay is a timer, and this component unmounts whenever
+  // its tab is switched or a different material is opened (the panel is
+  // keyed by material id). Running the timer through an effect with a
+  // cleanup means React cancels it on unmount instead of a "setState on an
+  // unmounted component" firing afterward.
+  useEffect(() => {
+    if (status !== "generating") {
+      return;
+    }
+
+    const timer = setTimeout(() => setStatus("ready"), GENERATING_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [status]);
+
   function handleGenerateClick() {
     setStatus("generating");
-    setTimeout(() => setStatus("ready"), GENERATING_DELAY_MS);
   }
 
   return (

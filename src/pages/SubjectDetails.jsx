@@ -42,6 +42,33 @@ function SubjectDetails({
   const [activeResourceTab, setActiveResourceTab] = useState("summary");
   const fileInputRef = useRef(null);
 
+  // Derived before any early return: the processing effect below and the
+  // JSX further down both read these, and the effect must see variables
+  // declared above it. Plain derivations are safe here — `subject &&`
+  // short-circuits, so a missing subject just yields empty values.
+  const materials = (subject && subject.materials) || [];
+  const selectedMaterial = materials.find(
+    (material) => material.id === selectedMaterialId
+  );
+
+  // Simulates "processing" a newly uploaded file. While the selected
+  // material is still marked "processing", wait a moment and then flip it
+  // to "ready". This is the only faked part of upload — the file itself,
+  // its name, and its size are all real, just not sent anywhere.
+  //
+  // Hooks must run in the same order on every render, so this effect sits
+  // ABOVE the `if (!subject)` early return below — calling hooks after a
+  // conditional return is a React error even when the guard rarely trips.
+  useEffect(() => {
+    if (subject && selectedMaterial && selectedMaterial.status === "processing") {
+      const timer = setTimeout(() => {
+        onUpdateMaterialStatus(subject.id, selectedMaterial.id, "ready");
+      }, PROCESSING_DELAY_MS);
+
+      return () => clearTimeout(timer);
+    }
+  }, [subject, selectedMaterial, onUpdateMaterialStatus]);
+
   // Defensive guard: App.jsx only renders this page when it has found a
   // matching subject, so this shouldn't normally happen — but if it ever
   // does (a stale id, a subject removed elsewhere), fail safely instead of
@@ -61,33 +88,11 @@ function SubjectDetails({
     );
   }
 
-  // Defensive guard: fall back to an empty list if a subject somehow has
-  // no materials array yet, instead of crashing on materials.find/.length.
-  const materials = subject.materials || [];
-
-  const selectedMaterial = materials.find(
-    (material) => material.id === selectedMaterialId
-  );
-
   // Drives the "Materials completed" stat below — calculated fresh on every
   // render from the materials themselves, never stored as its own number.
   const completedCount = materials.filter(
     (material) => material.completionStatus === "completed"
   ).length;
-
-  // Simulates "processing" a newly uploaded file. While the selected
-  // material is still marked "processing", wait a moment and then flip it
-  // to "ready". This is the only faked part of upload — the file itself,
-  // its name, and its size are all real, just not sent anywhere.
-  useEffect(() => {
-    if (selectedMaterial && selectedMaterial.status === "processing") {
-      const timer = setTimeout(() => {
-        onUpdateMaterialStatus(subject.id, selectedMaterial.id, "ready");
-      }, PROCESSING_DELAY_MS);
-
-      return () => clearTimeout(timer);
-    }
-  }, [selectedMaterial, subject.id, onUpdateMaterialStatus]);
 
   function handleUploadClick() {
     // The actual file picker is the hidden <input> below this button —

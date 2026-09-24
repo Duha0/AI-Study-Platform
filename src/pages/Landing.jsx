@@ -78,7 +78,8 @@ function Landing({ onGetStarted, onLogIn }) {
       </section>
 
       <footer className="landing-footer">
-        <p>© 2026 StudyAI. Made for students who'd rather be studying.</p>
+        {/* Current year, so it never goes stale as time passes. */}
+        <p>© {new Date().getFullYear()} StudyAI. Made for students who'd rather be studying.</p>
       </footer>
     </div>
   );

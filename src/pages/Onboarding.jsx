@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { writeOnboarding, STUDY_LEVELS } from "../lib/storage";
 
-const ONBOARDING_KEY = "studyai-onboarding";
-
-const STUDY_LEVELS = ["High School", "University", "Self Learner"];
+// STUDY_LEVELS is shared with Profile's dropdown (imported above) so the
+// two selects can never drift apart.
 
 function Onboarding({ onComplete }) {
   const [subject, setSubject] = useState("");
@@ -13,12 +13,7 @@ function Onboarding({ onComplete }) {
 
     const onboardingInfo = { subject: subject.trim(), level };
 
-    try {
-      localStorage.setItem(ONBOARDING_KEY, JSON.stringify(onboardingInfo));
-    } catch (storageError) {
-      // Nothing to save if storage isn't available — the person can still
-      // continue into the app for this session.
-    }
+    writeOnboarding(onboardingInfo);
 
     onComplete();
   }

@@ -1,6 +1,5 @@
 import { useState } from "react";
-
-const USER_KEY = "studyai-user";
+import { readUser } from "../lib/storage";
 
 function Login({ onLoginSuccess, onNavigateRegister }) {
   const [email, setEmail] = useState("");
@@ -10,15 +9,12 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
   function handleSubmit(event) {
     event.preventDefault();
 
-    let storedUser = null;
-    try {
-      const raw = localStorage.getItem(USER_KEY);
-      storedUser = raw ? JSON.parse(raw) : null;
-    } catch (storageError) {
-      storedUser = null;
-    }
+    // lib/storage.js owns the "studyai-user" key and guarantees a well-
+    // shaped object comes back ({ fullName, email, password } all strings),
+    // so no JSON parsing or field-guarding is needed here.
+    const storedUser = readUser();
 
-    if (!storedUser) {
+    if (!storedUser.email) {
       setError("No account found. Please create one first.");
       return;
     }

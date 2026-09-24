@@ -8,6 +8,15 @@ import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
 import Profile from "./pages/Profile";
+import {
+  readTheme,
+  writeTheme,
+  readLoggedIn,
+  writeLoggedIn,
+  clearLoggedIn,
+  readUser,
+  getInitials,
+} from "./lib/storage";
 
 /* ---------------------------------------------------------------------------
    Sample subjects
@@ -110,82 +119,29 @@ const navItems = [
 // in one place and shared by both Dashboard and Subjects.
 const CARD_COLORS = ["#2E6B4F", "#7A5AA6", "#C08A2E", "#3B7C99", "#B85C5C"];
 
-/* ---------------------------------------------------------------------------
-   Theme helpers — unchanged from before.
-   localStorage can throw in some private-browsing modes, so both reads and
-   writes are wrapped. If anything fails we just fall back to light mode.
-   --------------------------------------------------------------------------- */
-
-const THEME_KEY = "studyai-theme";
-
-function getSavedTheme() {
-  try {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved === "light" || saved === "dark") {
-      return saved;
-    }
-  } catch (error) {
-    // Ignore and use the default.
-  }
-  return "light"; // Light mode is the default.
-}
-
-function saveTheme(theme) {
-  try {
-    localStorage.setItem(THEME_KEY, theme);
-  } catch (error) {
-    // Ignore — the theme still works for this session.
-  }
-}
+/* Theme helpers now live in lib/storage.js (readTheme/writeTheme) along with
+   the "studyai-theme" key — both imported above. */
 
 /* ---------------------------------------------------------------------------
-   Login state — same wrapped-localStorage pattern as theme above. This is
-   the only thing that gates which pages are reachable; the account data
-   itself (name/email/password) and onboarding answers are read and written
-   directly by the Register/Login/Onboarding pages, since App.jsx doesn't
-   need them for anything.
+   Login/user storage — every key constant and safe localStorage helper now
+   lives in lib/storage.js (LOGIN_KEY, USER_KEY, readLoggedIn, writeLoggedIn,
+   clearLoggedIn, readUser, getInitials — imported above), so there is
+   exactly one definition shared with Register/Login/Onboarding/Profile.
+   isLoggedIn state below is still the one and only source of truth for
+   *whether* someone is logged in; the stored flag just restores it on refresh.
    --------------------------------------------------------------------------- */
-
-const LOGIN_KEY = "studyai-logged-in";
-
-function getSavedLoginState() {
-  try {
-    return localStorage.getItem(LOGIN_KEY) === "true";
-  } catch (error) {
-    return false;
-  }
-}
 
 // Reads the registered user's name for display (sidebar, Dashboard welcome
-// message). Same "studyai-user" key Register.jsx writes and Login.jsx
-// reads — this is read-only here, it doesn't add a second place that
-// tracks *whether* someone is logged in. isLoggedIn/LOGIN_KEY above stays
-// the one and only source of truth for that.
-const USER_KEY = "studyai-user";
-
-function getSavedUserName() {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    const user = raw ? JSON.parse(raw) : null;
-    return user && user.fullName ? user.fullName : null;
-  } catch (error) {
-    return null;
-  }
+// message). An empty stored name maps to null so "no name yet" stays
+// distinct from an intentionally blank one.
+function readUserName() {
+  return readUser().fullName || null;
 }
 
-// Initials for the sidebar avatar, computed from the same name — so it
-// can never show initials that don't match the name next to them.
-function getInitials(name) {
-  if (!name) return "S";
-  const parts = name.trim().split(/\s+/);
-  const initials = (parts[0][0] || "") + (parts[1] ? parts[1][0] : "");
-  return initials.toUpperCase() || "S";
-}
-
-// The pages that require being logged in. Used only as a defensive check —
-// in normal use the app never sets activePage to one of these while
-// logged out (see the useEffect in App below) — but it makes that
-// guarantee explicit and keeps it safe even if that ever changes.
+// The pages that require being logged in. Used only as a defensive guard —
+// in normal use the app never shows one of these while logged out (see the
+// `visiblePage` derivation in App below) — but it makes that guarantee
+// explicit and keeps it safe even if that ever changes.
 const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress", "Profile"];
 
 /* ---------------------------------------------------------------------------
@@ -244,6 +200,7 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
             className={
               item.name === active ? "nav-link nav-link-active" : "nav-link"
             }
+            aria-current={item.name === active ? "page" : undefined}
             onClick={() => onNavigate(item.name)}
           >
             <svg
@@ -287,33 +244,30 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
    --------------------------------------------------------------------------- */
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(getSavedLoginState);
+  const [isLoggedIn, setIsLoggedIn] = useState(readLoggedIn);
   // Logged-in visitors land on Dashboard; logged-out ones land on Landing.
   // Both read the same saved login state, so a refresh doesn't bounce a
   // logged-in person back out to the Landing page.
   const [activePage, setActivePage] = useState(() =>
-    getSavedLoginState() ? "Dashboard" : "Landing"
+    readLoggedIn() ? "Dashboard" : "Landing"
   );
-  const [theme, setTheme] = useState(getSavedTheme);
+  const [theme, setTheme] = useState(readTheme);
   const [subjects, setSubjects] = useState(initialSubjects);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [userName, setUserName] = useState(getSavedUserName);
+  const [userName, setUserName] = useState(readUserName);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    saveTheme(theme);
+    writeTheme(theme);
   }, [theme]);
 
-  // Defensive safeguard for the protected pages: the app never sets
-  // activePage to one of these while logged out through its own buttons,
-  // but if isLoggedIn ever becomes false while one is showing (or vice
-  // versa becomes relevant later), this brings the two back in sync
-  // instead of leaving a protected page rendered to a logged-out visitor.
-  useEffect(() => {
-    if (!isLoggedIn && PROTECTED_PAGES.includes(activePage)) {
-      setActivePage("Landing");
-    }
-  }, [isLoggedIn, activePage]);
+  // What should actually render: if the active page is a protected one but
+  // there's no session, fall back to the Landing page. This is plain
+  // derivation from existing state — no effect, no cascading setState — and
+  // the stored `activePage` itself is left untouched, so logging back in
+  // after being bounced to Landing still returns to the page they were on.
+  const visiblePage =
+    !isLoggedIn && PROTECTED_PAGES.includes(activePage) ? "Landing" : activePage;
 
   function toggleTheme() {
     setTheme(theme === "light" ? "dark" : "light");
@@ -450,24 +404,15 @@ function App() {
   // lands on Dashboard.
   function handleAuthenticated() {
     setIsLoggedIn(true);
-    setUserName(getSavedUserName()); // pick up the name Register/Login just saved
-    try {
-      localStorage.setItem(LOGIN_KEY, "true");
-    } catch (error) {
-      // The session still works even if this couldn't be saved — it just
-      // won't be remembered across a refresh.
-    }
+    setUserName(readUserName()); // pick up the name Register/Login just saved
+    writeLoggedIn();
     handleNavigate("Dashboard");
   }
 
   function handleLogout() {
     setIsLoggedIn(false);
     setUserName(null); // clear the displayed name only — the saved account stays
-    try {
-      localStorage.removeItem(LOGIN_KEY);
-    } catch (error) {
-      // Not critical — isLoggedIn is already false for this session.
-    }
+    clearLoggedIn();
     // subjects/materials state is untouched here on purpose — logging out
     // never clears what's been created.
     handleNavigate("Landing");
@@ -478,17 +423,17 @@ function App() {
   if (!isLoggedIn) {
     return (
       <>
-        {activePage === "Register" ? (
+        {visiblePage === "Register" ? (
           <Register
             onRegistered={() => handleNavigate("Onboarding")}
             onNavigateLogin={() => handleNavigate("Login")}
           />
-        ) : activePage === "Login" ? (
+        ) : visiblePage === "Login" ? (
           <Login
             onLoginSuccess={handleAuthenticated}
             onNavigateRegister={() => handleNavigate("Register")}
           />
-        ) : activePage === "Onboarding" ? (
+        ) : visiblePage === "Onboarding" ? (
           <Onboarding onComplete={handleAuthenticated} />
         ) : (
           <Landing
@@ -503,7 +448,7 @@ function App() {
   return (
     <div className="app">
       <Sidebar
-        active={activePage}
+        active={visiblePage}
         onNavigate={handleNavigate}
         theme={theme}
         onToggleTheme={toggleTheme}
@@ -512,7 +457,7 @@ function App() {
       />
 
       <main className="main">
-        {activePage === "Dashboard" && (
+        {visiblePage === "Dashboard" && (
           <Dashboard
             subjects={subjects}
             onCreateSubject={handleCreateSubject}
@@ -520,7 +465,7 @@ function App() {
           />
         )}
 
-        {activePage === "Subjects" &&
+        {visiblePage === "Subjects" &&
           (selectedSubject ? (
             <SubjectDetails
               subject={selectedSubject}
@@ -540,16 +485,16 @@ function App() {
             />
           ))}
 
-        {activePage === "Progress" && (
+        {visiblePage === "Progress" && (
           <p className="coming-soon">Progress tracking is coming soon.</p>
         )}
 
-        {activePage === "Profile" && (
+        {visiblePage === "Profile" && (
           <Profile
             theme={theme}
             onSetTheme={handleSetTheme}
             onLogout={handleLogout}
-            onProfileUpdated={() => setUserName(getSavedUserName())}
+            onProfileUpdated={() => setUserName(readUserName())}
           />
         )}
       </main>

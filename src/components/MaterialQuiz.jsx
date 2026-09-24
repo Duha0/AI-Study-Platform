@@ -77,6 +77,14 @@ function MaterialQuiz({ latestScore, onComplete }) {
   const isLastQuestion = currentIndex === QUESTIONS.length - 1;
 
   function handleNext() {
+    // Defensive guards: the UI can't reach here without a selected option
+    // (the button is disabled) or while already finished, but a fast
+    // double-click racing a re-render could otherwise score twice against
+    // a stale question — cheap to make impossible.
+    if (!currentQuestion || selectedOptionId === null || isFinished) {
+      return;
+    }
+
     // Computed directly instead of read back from state, since setScore
     // is async — reading `score` here on the last question could still
     // see last render's value and report the wrong total.

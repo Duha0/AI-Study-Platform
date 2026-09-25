@@ -1,30 +1,26 @@
 // One subject card.
-// - Dashboard preview: neither prop is passed, renders as a plain, static card.
-// - Subjects page: both props are passed — `onOpen` opens Subject Details,
-//   `onDelete` removes the subject (after the caller confirms).
+// - Dashboard preview: no props beyond `subject`, renders as a plain card.
+// - Subjects page: `onOpen`/`onDelete` make it interactive.
 //
-// `subject.description` is optional — sample subjects don't have one and
-// show `lastOpened` instead; subjects created through the modal always have
-// a description, so that takes priority when present.
+// Data comes from the backend (SubjectOut): material_count and
+// completed_materials are computed server-side, so this component only
+// renders numbers — no progress math lives here anymore.
 
 function SubjectCard({ subject, onOpen, onDelete }) {
-  const metaText = subject.description ? subject.description : subject.lastOpened;
+  const metaText = subject.description || "Tap to open this subject";
 
-  // Progress is derived from the materials themselves — not a stored
-  // number — so it can never drift out of sync with what's actually
-  // marked Completed on the Materials list.
-  const totalMaterials = subject.materials.length;
-  const completedMaterials = subject.materials.filter(
-    (material) => material.completionStatus === "completed"
-  ).length;
+  const totalMaterials = subject.material_count ?? 0;
+  const completedMaterials = subject.completed_materials ?? 0;
   const completionPercent =
-    totalMaterials === 0 ? 0 : Math.round((completedMaterials / totalMaterials) * 100);
+    totalMaterials === 0
+      ? 0
+      : Math.round((completedMaterials / totalMaterials) * 100);
 
   const cardBody = (
     <>
       <div className="subject-top">
         <span className="subject-tile" style={{ backgroundColor: subject.color }}>
-          {subject.initial}
+          {subject.name?.charAt(0).toUpperCase() || "?"}
         </span>
         <span className="subject-count">{totalMaterials} materials</span>
       </div>
@@ -47,16 +43,13 @@ function SubjectCard({ subject, onOpen, onDelete }) {
     </>
   );
 
-  // Dashboard preview: no interaction, same markup as before.
+  // Dashboard preview: no interaction.
   if (!onOpen && !onDelete) {
     return <article className="subject-card">{cardBody}</article>;
   }
 
-  // Subjects page: the card itself is a button (opens details), and the
-  // delete button is a separate element layered on top of it. They're
-  // siblings, not one nested inside the other — browsers don't allow a
-  // <button> inside a <button>, and nesting them would also make a click
-  // on Delete accidentally open the card underneath it too.
+  // Subjects page: the card itself is a button (opens details); the delete
+  // button is a sibling overlay, never nested (browsers forbid button-in-button).
   return (
     <div className="subject-card-shell">
       <button

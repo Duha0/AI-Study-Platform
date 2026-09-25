@@ -730,7 +730,8 @@
 }
 
 /* Ready is the same green tone as the file-type badge; Processing gets a
-   neutral tone so it visibly reads as "not done yet" without a new color. */
+   neutral tone so it visibly reads as "not done yet" without a new color.
+   Failed reuses the danger colors — extraction problems must stand out. */
 .material-status-ready {
   background-color: var(--accent-soft);
   color: var(--accent-fg);
@@ -739,6 +740,11 @@
 .material-status-processing {
   background-color: var(--track);
   color: var(--ink-soft);
+}
+
+.material-status-failed {
+  background-color: var(--danger-soft);
+  color: var(--danger);
 }
 
 .material-preview-description {
@@ -1171,6 +1177,85 @@
   flex-wrap: wrap;
   gap: 10px;
 }
+
+/* --------------------------------------------------------------------------
+   App boot screen + in-app banners
+   -------------------------------------------------------------------------- */
+
+.app-boot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: var(--paper);
+  color: var(--ink-soft);
+  font-size: 15px;
+}
+
+.app-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 28px;
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+
+.app-banner-error {
+  background-color: var(--danger-soft);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.app-banner p {
+  margin: 0;
+}
+
+.app-banner .button-secondary {
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+/* --------------------------------------------------------------------------
+   Quiz result review rows
+   -------------------------------------------------------------------------- */
+
+.quiz-review {
+  margin: 0 0 20px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-review-row {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background-color: var(--paper);
+}
+
+.quiz-review-prompt {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quiz-review-detail {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Progress page
+   -------------------------------------------------------------------------- */
+
+/* The Progress page reuses .stats-grid/.stat-card/.material-list, so only
+   the dot color needs a hook here. */
 
 /* --------------------------------------------------------------------------
    Landing page

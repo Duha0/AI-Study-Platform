@@ -1,35 +1,44 @@
 import { useState } from "react";
-import { readUser } from "../lib/storage";
+import { authApi, ApiError } from "../lib/api";
+import { setToken, cacheUser } from "../lib/storage";
+
+// Backend-backed login. On success the JWT and user profile are stored via
+// lib/storage and handed to App.jsx, which loads the dashboard. UI unchanged.
 
 function Login({ onLoginSuccess, onNavigateRegister }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    // lib/storage.js owns the "studyai-user" key and guarantees a well-
-    // shaped object comes back ({ fullName, email, password } all strings),
-    // so no JSON parsing or field-guarding is needed here.
-    const storedUser = readUser();
-
-    if (!storedUser.email) {
-      setError("No account found. Please create one first.");
+    if (!email.trim() || !password) {
+      setError("Please enter your email and password.");
       return;
     }
 
-    const emailMatches =
-      storedUser.email.trim().toLowerCase() === email.trim().toLowerCase();
-    const passwordMatches = storedUser.password === password;
-
-    if (!emailMatches || !passwordMatches) {
-      setError("Incorrect email or password.");
-      return;
-    }
-
+    setIsSubmitting(true);
     setError(null);
-    onLoginSuccess();
+    try {
+      const response = await authApi.login(email.trim(), password);
+      setToken(response.access_token);
+
+      // The login endpoint returns only a token — fetch the profile so the
+      // sidebar/dashboard have the user's real name immediately.
+      const me = await authApi.fetchMe();
+      cacheUser(me);
+      onLoginSuccess(response.access_token, me);
+    } catch (apiError) {
+      if (apiError instanceof ApiError && apiError.status === 0) {
+        setError(apiError.message);
+      } else {
+        setError(apiError.message || "Could not log you in. Please try again.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -61,8 +70,8 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
             />
           </div>
 
-          <button type="submit" className="button-primary auth-submit">
-            Log In
+          <button type="submit" className="button-primary auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Logging in…" : "Log In"}
           </button>
         </form>
 

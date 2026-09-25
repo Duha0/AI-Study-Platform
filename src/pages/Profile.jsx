@@ -1,30 +1,22 @@
 import { useState } from "react";
-import {
-  readUser,
-  writeUser,
-  readOnboarding,
-  writeOnboarding,
-  STUDY_LEVELS,
-} from "../lib/storage";
+import { usersApi } from "../lib/api";
+import { STUDY_LEVELS } from "../lib/storage";
 
-// All keys and safe storage access live in lib/storage.js — this page reads
-// and writes the exact same user/onboarding objects as Register, Login, and
-// Onboarding, through the same helpers. STUDY_LEVELS is shared with
-// Onboarding's dropdown so the two selects can never drift apart.
+// Profile & Settings. Account fields (name, study info) are read from and
+// written to the backend via the API layer. Theme is a UI-only preference
+// owned by App.jsx state (persisted in lib/storage). Logout flows through
+// App.jsx so both the sidebar and this page behave identically.
 
-// `theme`/`onSetTheme` and `onLogout` come straight from App.jsx — this
-// page reuses the exact same theme state and logout logic the Sidebar
-// uses, rather than having its own.
-function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
-  // Read once, on mount, the same way Register/Login/Onboarding read their
-  // own saved values.
-  const [email] = useState(() => readUser().email || "");
-  const [fullName, setFullName] = useState(() => readUser().fullName || "");
-  const [studying, setStudying] = useState(() => readOnboarding().subject || "");
-  const [level, setLevel] = useState(() => readOnboarding().level || STUDY_LEVELS[0]);
+function Profile({ user, theme, onSetTheme, onLogout, onProfileUpdated }) {
+  const [fullName, setFullName] = useState(user?.full_name || "");
+  const [studying, setStudying] = useState(user?.studying || "");
+  const [level, setLevel] = useState(user?.study_level || STUDY_LEVELS[0]);
   const [feedback, setFeedback] = useState(null); // { type: "error" | "success", text }
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  const email = user?.email || "";
+
+  async function handleSubmit(event) {
     event.preventDefault();
 
     if (!fullName.trim()) {
@@ -32,14 +24,20 @@ function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
       return;
     }
 
-    // Spread the existing stored user so email/password are carried over
-    // untouched — this updates the one account object, it doesn't replace
-    // it with a new one.
-    writeUser({ ...readUser(), fullName: fullName.trim() });
-    writeOnboarding({ subject: studying.trim(), level });
-
-    onProfileUpdated(); // tells App.jsx to re-read the name for the sidebar/Dashboard
-    setFeedback({ type: "success", text: "Changes saved." });
+    setIsSubmitting(true);
+    setFeedback(null);
+    try {
+      const updatedUser = await usersApi.updateProfile(fullName.trim(), studying.trim(), level);
+      onProfileUpdated(updatedUser);
+      setFeedback({ type: "success", text: "Changes saved." });
+    } catch (apiError) {
+      setFeedback({
+        type: "error",
+        text: apiError.message || "Could not save your changes. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -47,9 +45,7 @@ function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
       <header className="welcome">
         <div>
           <h1 className="welcome-title">Profile &amp; Settings</h1>
-          <p className="welcome-subtitle">
-            Manage your account and how StudyAI looks.
-          </p>
+          <p className="welcome-subtitle">Manage your account and how StudyAI looks.</p>
         </div>
       </header>
 
@@ -104,8 +100,8 @@ function Profile({ theme, onSetTheme, onLogout, onProfileUpdated }) {
             />
           </div>
 
-          <button type="submit" className="button-primary">
-            Save Changes
+          <button type="submit" className="button-primary" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : "Save Changes"}
           </button>
         </form>
       </section>

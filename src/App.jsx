@@ -7,101 +7,18 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Subjects from "./pages/Subjects";
 import SubjectDetails from "./pages/SubjectDetails";
+import Progress from "./pages/Progress";
 import Profile from "./pages/Profile";
 import {
   readTheme,
   writeTheme,
-  readLoggedIn,
-  writeLoggedIn,
-  clearLoggedIn,
-  readUser,
+  getToken,
+  cacheUser,
+  getCachedUser,
+  clearAuth,
   getInitials,
 } from "./lib/storage";
-
-/* ---------------------------------------------------------------------------
-   Sample subjects
-   Lives here, not in a page file, because both Dashboard (a short preview)
-   and Subjects (the full list) need to read and add to the same list.
-
-   Each subject now owns its own `materials` array (previously this was one
-   shared static list defined inside SubjectDetails.jsx). Moving it here is
-   what makes "Materials" a real, per-subject count instead of a separate
-   number that could drift out of sync — the stat is just materials.length.
-   --------------------------------------------------------------------------- */
-
-function createSampleMaterials() {
-  return [
-    {
-      id: 1,
-      filename: "Lecture Notes - Week 1.pdf",
-      fileType: "PDF",
-      size: "1.2 MB",
-      uploaded: "Uploaded 3 days ago",
-      description:
-        "An overview of the topics covered in the first week, including key definitions and diagrams.",
-      status: "ready", // upload processing state — unrelated to completionStatus below
-      completionStatus: "completed",
-      quizScore: { correct: 4, total: 5 },
-    },
-    {
-      id: 2,
-      filename: "Chapter Summary.pdf",
-      fileType: "PDF",
-      size: "640 KB",
-      uploaded: "Uploaded 5 days ago",
-      description:
-        "A condensed summary of the chapter's main ideas — useful for a quick review before a quiz.",
-      status: "ready",
-      completionStatus: "in-progress",
-      quizScore: null,
-    },
-    {
-      id: 3,
-      filename: "Practice Problem Set.pdf",
-      fileType: "PDF",
-      size: "2.1 MB",
-      uploaded: "Uploaded 1 week ago",
-      description:
-        "A set of practice problems with varying difficulty, for testing how well the material has landed.",
-      status: "ready",
-      completionStatus: "not-started",
-      quizScore: null,
-    },
-  ];
-}
-
-const initialSubjects = [
-  {
-    id: 1,
-    name: "Organic Chemistry",
-    description: "Reactions, mechanisms, and the structure of carbon-based compounds.",
-    initial: "O",
-    color: "#2E6B4F",
-    materials: createSampleMaterials(),
-    quizzesCompleted: 9,
-    lastOpened: "Opened yesterday",
-  },
-  {
-    id: 2,
-    name: "Linear Algebra",
-    description: "Vectors, matrices, and linear transformations.",
-    initial: "L",
-    color: "#7A5AA6",
-    materials: createSampleMaterials(),
-    quizzesCompleted: 5,
-    lastOpened: "Opened 3 days ago",
-  },
-  {
-    id: 3,
-    name: "World History",
-    description: "Major events and turning points from ancient to modern times.",
-    initial: "W",
-    color: "#C08A2E",
-    materials: createSampleMaterials(),
-    quizzesCompleted: 2,
-    lastOpened: "Opened last week",
-  },
-];
+import { authApi, subjectsApi, ApiError } from "./lib/api";
 
 const navItems = [
   { name: "Dashboard", icon: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" },
@@ -113,35 +30,9 @@ const navItems = [
   },
 ];
 
-// Colors are assigned to new subjects by cycling through this list, so each
-// one gets a distinct identifying color the same way the sample subjects do.
-// Lives here (not in a page file) because subject creation is now handled
-// in one place and shared by both Dashboard and Subjects.
-const CARD_COLORS = ["#2E6B4F", "#7A5AA6", "#C08A2E", "#3B7C99", "#B85C5C"];
-
-/* Theme helpers now live in lib/storage.js (readTheme/writeTheme) along with
-   the "studyai-theme" key — both imported above. */
-
-/* ---------------------------------------------------------------------------
-   Login/user storage — every key constant and safe localStorage helper now
-   lives in lib/storage.js (LOGIN_KEY, USER_KEY, readLoggedIn, writeLoggedIn,
-   clearLoggedIn, readUser, getInitials — imported above), so there is
-   exactly one definition shared with Register/Login/Onboarding/Profile.
-   isLoggedIn state below is still the one and only source of truth for
-   *whether* someone is logged in; the stored flag just restores it on refresh.
-   --------------------------------------------------------------------------- */
-
-// Reads the registered user's name for display (sidebar, Dashboard welcome
-// message). An empty stored name maps to null so "no name yet" stays
-// distinct from an intentionally blank one.
-function readUserName() {
-  return readUser().fullName || null;
-}
-
-// The pages that require being logged in. Used only as a defensive guard —
-// in normal use the app never shows one of these while logged out (see the
-// `visiblePage` derivation in App below) — but it makes that guarantee
-// explicit and keeps it safe even if that ever changes.
+// The pages that require a real backend session. Guarded by deriving what to
+// render from isLoggedIn — a logged-out visitor can never reach them (and
+// with no token, no API data can be fetched either).
 const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress", "Profile"];
 
 /* ---------------------------------------------------------------------------
@@ -244,188 +135,155 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
    --------------------------------------------------------------------------- */
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(readLoggedIn);
-  // Logged-in visitors land on Dashboard; logged-out ones land on Landing.
-  // Both read the same saved login state, so a refresh doesn't bounce a
-  // logged-in person back out to the Landing page.
+  const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(getToken()));
+  // What to render on first paint while the token is being validated:
+  // logged-out users see Landing; logged-in users see the app skeleton.
   const [activePage, setActivePage] = useState(() =>
-    readLoggedIn() ? "Dashboard" : "Landing"
+    getToken() ? "Dashboard" : "Landing"
   );
   const [theme, setTheme] = useState(readTheme);
-  const [subjects, setSubjects] = useState(initialSubjects);
+  const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  const [userName, setUserName] = useState(readUserName);
+  const [user, setUser] = useState(getCachedUser);
+  const [isBooting, setIsBooting] = useState(() => Boolean(getToken()));
+  const [bootError, setBootError] = useState(null);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     writeTheme(theme);
   }, [theme]);
 
-  // What should actually render: if the active page is a protected one but
-  // there's no session, fall back to the Landing page. This is plain
-  // derivation from existing state — no effect, no cascading setState — and
-  // the stored `activePage` itself is left untouched, so logging back in
-  // after being bounced to Landing still returns to the page they were on.
-  const visiblePage =
-    !isLoggedIn && PROTECTED_PAGES.includes(activePage) ? "Landing" : activePage;
+  // Session restoration: validate the stored token against the backend and
+  // load the user's real subjects. Without a valid token this skips quietly
+  // and the visitor lands on the public pages.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function restoreSession() {
+      if (!getToken()) {
+        setIsBooting(false);
+        return;
+      }
+      try {
+        const me = await authApi.fetchMe();
+        if (cancelled) return;
+        setUser(me);
+        cacheUser(me);
+        const data = await subjectsApi.listSubjects();
+        if (cancelled) return;
+        setSubjects(data);
+      } catch (error) {
+        if (cancelled) return;
+        if (!(error instanceof ApiError) || error.status !== 401) {
+          // Server reachable but something else failed — show the app with
+          // a retry banner rather than kicking the person out.
+          setBootError(
+            error instanceof Error ? error.message : "Could not load your data."
+          );
+        }
+      } finally {
+        if (!cancelled) setIsBooting(false);
+      }
+    }
+
+    restoreSession();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleTheme() {
     setTheme(theme === "light" ? "dark" : "light");
   }
 
-  // Used by the Profile/Settings page, which shows Light Mode and Dark
-  // Mode as two separate buttons rather than one toggle — this sets a
-  // specific value instead of flipping, but it's the exact same `theme`
-  // state and the exact same useEffect above that applies it and saves it.
-  function handleSetTheme(value) {
-    setTheme(value);
+  // Re-fetch subjects from the backend — the one source of truth.
+  async function refreshSubjects() {
+    const data = await subjectsApi.listSubjects();
+    setSubjects(data);
+    return data;
   }
 
-  // Builds a full subject object from just a name and description, then
-  // adds it to state. Both the Dashboard and Subjects page open the same
-  // CreateSubjectModal and call this same function, so a subject created
-  // from either place ends up identical.
-  function handleCreateSubject(name, description) {
-    const newSubject = {
-      id: Date.now(), // good enough for local sample data
-      name,
-      description,
-      initial: name.charAt(0).toUpperCase(),
-      color: CARD_COLORS[subjects.length % CARD_COLORS.length],
-      materials: [],
-      quizzesCompleted: 0,
-      lastOpened: "Just created",
-    };
-
-    setSubjects((current) => [...current, newSubject]);
+  async function handleCreateSubject(name, description) {
+    await subjectsApi.createSubject(name, description);
+    await refreshSubjects();
   }
 
-  function handleDeleteSubject(id) {
-    setSubjects((current) => current.filter((subject) => subject.id !== id));
-
-    // If the subject being removed is the one currently open in Subject
-    // Details, drop back to the Subjects list instead of showing details
-    // for a subject that no longer exists.
-    setSelectedSubjectId((current) => (current === id ? null : current));
+  async function handleDeleteSubject(subjectId) {
+    await subjectsApi.deleteSubject(subjectId);
+    setSelectedSubjectId((current) => (current === subjectId ? null : current));
+    await refreshSubjects();
   }
 
-  function handleAddMaterial(subjectId, newMaterial) {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === subjectId
-          ? { ...subject, materials: [...subject.materials, newMaterial] }
-          : subject
-      )
-    );
-  }
-
-  // Only ever touches the one matching subject's materials array — every
-  // other subject's map() branch returns that subject unchanged, so this
-  // can never affect materials belonging to a different subject.
-  function handleDeleteMaterial(subjectId, materialId) {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === subjectId
-          ? {
-              ...subject,
-              materials: subject.materials.filter((material) => material.id !== materialId),
-            }
-          : subject
-      )
-    );
-  }
-
-  function handleUpdateMaterialStatus(subjectId, materialId, newStatus) {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === subjectId
-          ? {
-              ...subject,
-              materials: subject.materials.map((material) =>
-                material.id === materialId ? { ...material, status: newStatus } : material
-              ),
-            }
-          : subject
-      )
-    );
-  }
-
-  // Opening a material can promote it from "not-started" to "in-progress" —
-  // but only from "not-started". A material that's already "in-progress" or
-  // "completed" should stay that way just from being reopened.
-  function handleMarkMaterialInProgress(subjectId, materialId) {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === subjectId
-          ? {
-              ...subject,
-              materials: subject.materials.map((material) =>
-                material.id === materialId && material.completionStatus === "not-started"
-                  ? { ...material, completionStatus: "in-progress" }
-                  : material
-              ),
-            }
-          : subject
-      )
-    );
-  }
-
-  // Finishing a quiz records the score on the material itself (so it
-  // survives switching between Summary/Quiz/Flashcards, since those are
-  // unmounted when not the active tab) and marks the material Completed.
-  function handleCompleteMaterialQuiz(subjectId, materialId, score) {
-    setSubjects((current) =>
-      current.map((subject) =>
-        subject.id === subjectId
-          ? {
-              ...subject,
-              materials: subject.materials.map((material) =>
-                material.id === materialId
-                  ? { ...material, quizScore: score, completionStatus: "completed" }
-                  : material
-              ),
-            }
-          : subject
-      )
-    );
-  }
-
-  // The one navigation function for the whole app — used for the sidebar
-  // (Dashboard/Subjects/Progress) and for moving between the pre-login
-  // pages (Landing/Register/Login/Onboarding). It always also leaves the
-  // Subjects list rather than the details of whichever subject was open.
+  // The one navigation function for the whole app — sidebar (Dashboard /
+  // Subjects / Progress / Profile) and the public pages alike.
   function handleNavigate(pageName) {
     setActivePage(pageName);
     setSelectedSubjectId(null);
   }
 
-  // Shared by both "ways in": a successful Login, and finishing Onboarding
-  // right after Register. Either way, the person is now logged in and
-  // lands on Dashboard.
-  function handleAuthenticated() {
-    setIsLoggedIn(true);
-    setUserName(readUserName()); // pick up the name Register/Login just saved
-    writeLoggedIn();
+  // Called by Login success: session established, straight to Dashboard.
+  function handleAuthenticated(token, authenticatedUser) {
+    setTokenAndUser(token, authenticatedUser);
     handleNavigate("Dashboard");
   }
 
-  function handleLogout() {
+  // Called after Register: session established, but first-run personalization
+  // (Onboarding) comes before the Dashboard.
+  function handleRegistered(token, registeredUser) {
+    setTokenAndUser(token, registeredUser);
+    handleNavigate("Onboarding");
+  }
+
+  // Called when Onboarding completes: persist nothing here (the page already
+  // updated the profile via the API) — just carry the fresh user and move on.
+  function handleOnboarded(updatedUser) {
+    setUser(updatedUser);
+    cacheUser(updatedUser);
+    handleNavigate("Dashboard");
+  }
+
+  function setTokenAndUser(token, authenticatedUser) {
+    setUser(authenticatedUser);
+    cacheUser(authenticatedUser);
+    setIsLoggedIn(true);
+    refreshSubjects().catch(() => {
+      // Banner-less failure: the page-level error UI covers refetches.
+    });
+  }
+
+  async function handleLogout() {
+    // JWT is stateless — clearing the stored token client-side IS the logout.
+    clearAuth();
     setIsLoggedIn(false);
-    setUserName(null); // clear the displayed name only — the saved account stays
-    clearLoggedIn();
-    // subjects/materials state is untouched here on purpose — logging out
-    // never clears what's been created.
+    setUser(null);
+    setSubjects([]);
+    setSelectedSubjectId(null);
     handleNavigate("Landing");
   }
 
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
+
+  // What should actually render: if the active page is a protected one but
+  // there's no session, fall back to the Landing page. Plain derivation —
+  // no effects, no cascading state — and the stored page is left untouched
+  // so logging back in returns the user to where they were.
+  const visiblePage =
+    !isLoggedIn && PROTECTED_PAGES.includes(activePage) ? "Landing" : activePage;
+
+  if (isBooting) {
+    return (
+      <div className="app-boot">
+        <p>Signing you in…</p>
+      </div>
+    );
+  }
 
   if (!isLoggedIn) {
     return (
       <>
         {visiblePage === "Register" ? (
           <Register
-            onRegistered={() => handleNavigate("Onboarding")}
+            onRegistered={handleRegistered}
             onNavigateLogin={() => handleNavigate("Login")}
           />
         ) : visiblePage === "Login" ? (
@@ -434,7 +292,7 @@ function App() {
             onNavigateRegister={() => handleNavigate("Register")}
           />
         ) : visiblePage === "Onboarding" ? (
-          <Onboarding onComplete={handleAuthenticated} />
+          <Onboarding onComplete={handleOnboarded} />
         ) : (
           <Landing
             onGetStarted={() => handleNavigate("Register")}
@@ -453,15 +311,34 @@ function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
         onLogout={handleLogout}
-        userName={userName}
+        userName={user?.full_name}
       />
 
       <main className="main">
+        {bootError && (
+          <div className="app-banner app-banner-error">
+            <p>{bootError}</p>
+            <button
+              type="button"
+              className="button-secondary"
+              onClick={() => {
+                setBootError(null);
+                refreshSubjects().catch((error) =>
+                  setBootError(error.message || "Could not load your data.")
+                );
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
         {visiblePage === "Dashboard" && (
           <Dashboard
             subjects={subjects}
             onCreateSubject={handleCreateSubject}
-            userName={userName}
+            userName={user?.full_name}
+            onNavigate={handleNavigate}
           />
         )}
 
@@ -470,11 +347,8 @@ function App() {
             <SubjectDetails
               subject={selectedSubject}
               onBack={() => setSelectedSubjectId(null)}
-              onAddMaterial={handleAddMaterial}
-              onDeleteMaterial={handleDeleteMaterial}
-              onUpdateMaterialStatus={handleUpdateMaterialStatus}
-              onMarkMaterialInProgress={handleMarkMaterialInProgress}
-              onCompleteMaterialQuiz={handleCompleteMaterialQuiz}
+              onDataChanged={refreshSubjects}
+              onNavigate={handleNavigate}
             />
           ) : (
             <Subjects
@@ -485,16 +359,23 @@ function App() {
             />
           ))}
 
-        {visiblePage === "Progress" && (
-          <p className="coming-soon">Progress tracking is coming soon.</p>
-        )}
+        {/* A user who has just registered is logged in but lands on
+            Onboarding first — it renders inside the app shell as the
+            pre-Dashboard step. */}
+        {visiblePage === "Onboarding" && <Onboarding onComplete={handleOnboarded} />}
+
+        {visiblePage === "Progress" && <Progress onNavigate={handleNavigate} />}
 
         {visiblePage === "Profile" && (
           <Profile
+            user={user}
             theme={theme}
-            onSetTheme={handleSetTheme}
+            onSetTheme={setTheme}
             onLogout={handleLogout}
-            onProfileUpdated={() => setUserName(readUserName())}
+            onProfileUpdated={(updatedUser) => {
+              setUser(updatedUser);
+              cacheUser(updatedUser);
+            }}
           />
         )}
       </main>

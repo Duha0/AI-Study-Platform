@@ -1,43 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { resourcesApi } from "../lib/api";
 
-// The Flashcards tab inside Material Preview. Five static sample cards —
-// a real set generated from the material's actual content comes later.
+/* Flashcards tab — real AI-generated flashcards via the backend.
+ * Flip/previous/next UX preserved.
+ */
 
-const FLASHCARDS = [
-  {
-    id: 1,
-    question: "What does active recall mean?",
-    answer: "Testing yourself on material instead of just rereading it, which strengthens memory.",
-  },
-  {
-    id: 2,
-    question: "What is spaced repetition?",
-    answer: "Reviewing information at gradually increasing intervals to improve long-term retention.",
-  },
-  {
-    id: 3,
-    question: "Why are summaries useful before a quiz?",
-    answer: "They reinforce the key ideas so you can focus your study time on what matters most.",
-  },
-  {
-    id: 4,
-    question: "What's one advantage of flashcards?",
-    answer: "They make it easy to quickly test your recall of individual facts or terms.",
-  },
-  {
-    id: 5,
-    question: "What should you do if you get a quiz question wrong?",
-    answer: "Review that topic in the summary or material, then try the quiz again.",
-  },
-];
+function MaterialFlashcards({ materialId }) {
+  const [phase, setPhase] = useState("loading"); // loading | idle | generating | ready
+  const [cards, setCards] = useState([]);
+  const [error, setError] = useState(null);
 
-function MaterialFlashcards() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
 
-  const card = FLASHCARDS[currentIndex];
+  // On mount: load existing cards if they were already generated.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkExisting() {
+      try {
+        const existing = await resourcesApi.getFlashcards(materialId);
+        if (!cancelled && Array.isArray(existing) && existing.length > 0) {
+          setCards(existing);
+          setPhase("ready");
+        }
+      } catch {
+        // 404 = none yet.
+      }
+    }
+
+    checkExisting();
+    return () => {
+      cancelled = true;
+    };
+  }, [materialId]);
+
+  async function handleGenerate(regenerate = false) {
+    setPhase("generating");
+    setError(null);
+    try {
+      const data = await resourcesApi.generateFlashcards(materialId, regenerate);
+      setCards(data);
+      setCurrentIndex(0);
+      setIsFlipped(false);
+      setPhase("ready");
+    } catch (apiError) {
+      setError(apiError.message || "Flashcard generation failed. Please try again.");
+      setPhase(cards.length > 0 ? "ready" : "idle");
+    }
+  }
+
+  const card = cards[currentIndex];
   const isFirstCard = currentIndex === 0;
-  const isLastCard = currentIndex === FLASHCARDS.length - 1;
+  const isLastCard = currentIndex === cards.length - 1;
 
   function handlePrevious() {
     setCurrentIndex((current) => Math.max(current - 1, 0));
@@ -45,14 +60,47 @@ function MaterialFlashcards() {
   }
 
   function handleNext() {
-    setCurrentIndex((current) => Math.min(current + 1, FLASHCARDS.length - 1));
+    setCurrentIndex((current) => Math.min(current + 1, cards.length - 1));
     setIsFlipped(false);
+  }
+
+  if (phase === "loading") {
+    return (
+      <div>
+        <h3 className="summary-heading">Flashcards</h3>
+        <p className="resource-placeholder">Checking for saved flashcards…</p>
+      </div>
+    );
+  }
+
+  if (phase === "idle" || phase === "generating") {
+    return (
+      <div>
+        <h3 className="summary-heading">Flashcards</h3>
+        {error && <p className="form-error">{error}</p>}
+        {phase === "generating" ? (
+          <p className="resource-placeholder">Creating your flashcards…</p>
+        ) : (
+          <p className="resource-placeholder">
+            Click Generate Flashcards to create a set from this material.
+          </p>
+        )}
+        <button
+          type="button"
+          className="button-secondary"
+          onClick={() => handleGenerate(false)}
+          disabled={phase === "generating"}
+        >
+          Generate Flashcards
+        </button>
+      </div>
+    );
   }
 
   return (
     <div>
       <p className="flashcard-progress">
-        Card {currentIndex + 1} of {FLASHCARDS.length}
+        Card {currentIndex + 1} of {cards.length}
       </p>
 
       <button
@@ -61,7 +109,7 @@ function MaterialFlashcards() {
         onClick={() => setIsFlipped((flipped) => !flipped)}
       >
         <span className="flashcard-label">{isFlipped ? "Answer" : "Question"}</span>
-        <p className="flashcard-text">{isFlipped ? card.answer : card.question}</p>
+        <p className="flashcard-text">{isFlipped ? card?.back : card?.front}</p>
         <span className="flashcard-hint">Click to flip</span>
       </button>
 
@@ -81,6 +129,16 @@ function MaterialFlashcards() {
           disabled={isLastCard}
         >
           Next
+        </button>
+      </div>
+
+      <div className="flashcard-controls">
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => handleGenerate(true)}
+        >
+          Regenerate flashcards
         </button>
       </div>
     </div>

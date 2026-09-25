@@ -21,6 +21,10 @@ class RegisterRequest(BaseModel):
 class RegisterResponse(BaseModel):
     message: str
     user: "UserOut"
+    # Issued on registration so the client can start an authenticated session
+    # immediately (same shape as TokenResponse, mirrored after login).
+    access_token: str
+    token_type: str = "bearer"
 
 
 class LoginRequest(BaseModel):

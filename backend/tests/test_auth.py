@@ -13,6 +13,45 @@ def test_register_success(client):
     assert body["user"]["email"] == "ada@example.com"  # normalized to lowercase
     assert "password" not in body["user"]
     assert "password_hash" not in body["user"]
+    # Registration must hand back a session token immediately — the frontend
+    # stores it and calls authenticated endpoints right after signup.
+    assert body["access_token"]
+    assert body["token_type"] == "bearer"
+
+
+def test_register_returns_immediately_usable_session(client):
+    """Regression: the token from register must authenticate right away.
+
+    The real frontend flow is Register -> store token -> GET /api/subjects ->
+    POST /api/users/onboarding, all with the register-issued token and no
+    separate login in between.
+    """
+    register = client.post(
+        "/api/auth/register",
+        json={"full_name": "Post Reg", "email": "postreg@example.com", "password": "longpassword1"},
+    )
+    assert register.status_code == 201, register.text
+    token = register.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Authenticated list works immediately after registration.
+    subjects = client.get("/api/subjects", headers=headers)
+    assert subjects.status_code == 200, subjects.text
+    assert subjects.json() == []
+
+    # Onboarding completes with the same token (mirrors the UI's first call).
+    onboarding = client.post(
+        "/api/users/onboarding",
+        headers=headers,
+        json={"studying": "Computer Science", "study_level": "University"},
+    )
+    assert onboarding.status_code == 200, onboarding.text
+    assert onboarding.json()["onboarding_completed"] is True
+
+    # And /me with the register-issued token matches the registered user.
+    me = client.get("/api/auth/me", headers=headers)
+    assert me.status_code == 200, me.text
+    assert me.json()["email"] == "postreg@example.com"
 
 
 def test_register_duplicate_email(client):

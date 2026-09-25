@@ -1,10 +1,10 @@
 import { useState } from "react";
+import { authApi } from "../lib/api";
+import { setToken, cacheUser } from "../lib/storage";
 
-// Very small, frontend-only "account" storage. There's no backend yet, so
-// this is just enough to let Login later check "does this match what was
-// registered" — it's not secure and isn't meant to be; real auth comes
-// when a backend exists.
-const USER_KEY = "studyai-user";
+// Backend-backed registration. On success the server returns the user plus
+// a JWT, which is stored via lib/storage and handed up to App.jsx, which
+// routes into Onboarding. The UI is unchanged from the original design.
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -14,36 +14,45 @@ function Register({ onRegistered, onNavigateLogin }) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event) {
+  function validate() {
+    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
+      return "Please fill in every field.";
+    }
+    if (!EMAIL_PATTERN.test(email.trim())) {
+      return "Please enter a valid email address.";
+    }
+    if (password.length < 8) {
+      return "Password must be at least 8 characters.";
+    }
+    if (password !== confirmPassword) {
+      return "Password and Confirm Password don't match.";
+    }
+    return null;
+  }
+
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!fullName.trim() || !email.trim() || !password || !confirmPassword) {
-      setError("Please fill in every field.");
+    const validationError = validate();
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (!EMAIL_PATTERN.test(email.trim())) {
-      setError("Please enter a valid email address.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Password and Confirm Password don't match.");
-      return;
-    }
-
-    const user = { fullName: fullName.trim(), email: email.trim(), password };
-
-    try {
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-    } catch (storageError) {
-      // If storage fails (private browsing, full storage), there's nothing
-      // useful to save — but the person can still continue this session.
-    }
-
+    setIsSubmitting(true);
     setError(null);
-    onRegistered();
+    try {
+      const response = await authApi.register(fullName.trim(), email.trim(), password);
+      setToken(response.access_token);
+      cacheUser(response.user);
+      onRegistered(response.access_token, response.user);
+    } catch (apiError) {
+      setError(apiError.message || "Could not create your account. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -95,8 +104,8 @@ function Register({ onRegistered, onNavigateLogin }) {
             />
           </div>
 
-          <button type="submit" className="button-primary auth-submit">
-            Create Account
+          <button type="submit" className="button-primary auth-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating account…" : "Create Account"}
           </button>
         </form>
 

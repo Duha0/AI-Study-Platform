@@ -1,35 +1,65 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { resourcesApi } from "../lib/api";
 
-// The Summary tab inside Material Preview. There's no AI backend yet, so
-// clicking Generate just waits a moment and then shows a static, sample
-// summary — this is what a real generated summary will slot into later.
+/* Summary tab inside Material Preview — real AI summaries via the backend.
+ *
+ * States: loading (checking for an existing summary) -> idle (none yet) ->
+ * generating -> ready. Failures (AI not configured, AI error, no extracted
+ * text) surface a clear message and keep the retry button available.
+ */
 
-const GENERATING_DELAY_MS = 1200;
+function MaterialSummary({ materialId }) {
+  const [status, setStatus] = useState("loading"); // loading | idle | generating | ready
+  const [summary, setSummary] = useState(null);
+  const [error, setError] = useState(null);
 
-const SAMPLE_SUMMARY = {
-  intro:
-    "This material covers the core ideas needed to build a working understanding of the topic, moving from foundational definitions to more advanced applications.",
-  points: [
-    "Key definitions and terminology, introduced early to establish a shared vocabulary.",
-    "Step-by-step walkthroughs of the main processes or mechanisms involved.",
-    "Common mistakes and misconceptions, with guidance on how to avoid them.",
-    "A few worked examples that mirror the kinds of problems you'll see in the quiz.",
-    "A short recap connecting this material back to what came before it.",
-  ],
-};
+  // On mount: show an existing summary immediately if one was already
+  // generated (the backend stores it per material).
+  useEffect(() => {
+    let cancelled = false;
 
-function MaterialSummary() {
-  // "idle" | "generating" | "ready"
-  const [status, setStatus] = useState("idle");
+    async function checkExisting() {
+      try {
+        const existing = await resourcesApi.getSummary(materialId);
+        if (!cancelled && existing) {
+          setSummary(existing);
+          setStatus("ready");
+        }
+      } catch {
+        // 404 = none yet — the normal first-visit path.
+      }
+    }
 
-  function handleGenerateClick() {
+    checkExisting();
+    return () => {
+      cancelled = true;
+    };
+  }, [materialId]);
+
+  function handleGenerate(regenerate = false) {
     setStatus("generating");
-    setTimeout(() => setStatus("ready"), GENERATING_DELAY_MS);
+    setError(null);
+
+    // Generation can take a while (the AI is reading the whole document).
+    const generationPromise = resourcesApi.generateSummary(materialId, regenerate);
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 800));
+
+    Promise.all([generationPromise, minDelay])
+      .then(([data]) => {
+        setSummary(data);
+        setStatus("ready");
+      })
+      .catch((apiError) => {
+        setError(apiError.message || "Summary generation failed. Please try again.");
+        setStatus("idle");
+      });
   }
 
   return (
     <div>
       <h3 className="summary-heading">Summary</h3>
+
+      {status === "loading" && <p className="resource-placeholder">Checking for a saved summary…</p>}
 
       {status === "idle" && (
         <p className="resource-placeholder">
@@ -37,15 +67,15 @@ function MaterialSummary() {
         </p>
       )}
 
-      {status === "generating" && (
-        <p className="resource-placeholder">Generating…</p>
-      )}
+      {status === "generating" && <p className="resource-placeholder">Generating…</p>}
 
-      {status === "ready" && (
+      {error && <p className="form-error">{error}</p>}
+
+      {status === "ready" && summary && (
         <>
-          <p className="summary-text">{SAMPLE_SUMMARY.intro}</p>
+          <p className="summary-text">{summary.intro}</p>
           <ul className="summary-list">
-            {SAMPLE_SUMMARY.points.map((point) => (
+            {(summary.points || []).map((point) => (
               <li key={point}>{point}</li>
             ))}
           </ul>
@@ -56,8 +86,8 @@ function MaterialSummary() {
         <button
           type="button"
           className="button-secondary"
-          onClick={handleGenerateClick}
-          disabled={status === "generating"}
+          onClick={() => handleGenerate(status === "ready")}
+          disabled={status === "generating" || status === "loading"}
         >
           {status === "ready" ? "Regenerate Summary" : "Generate Summary"}
         </button>

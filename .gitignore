@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# --- Backend (FastAPI) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Local databases and uploaded files
+*.db
+*.sqlite3
+backend/uploads/
+
+# Secrets — templates (*.env.example) stay in git
+.env
+.env.local
+.env.*.local

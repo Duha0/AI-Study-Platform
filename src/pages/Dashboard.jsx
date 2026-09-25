@@ -3,22 +3,19 @@ import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
 
 /* ---------------------------------------------------------------------------
-   The Dashboard page
-   `subjects` comes from App.jsx — the same array the Subjects page and
-   Subject Details use, so every number here is computed fresh from it on
-   each render rather than tracked separately. Nothing on this page is
-   hard-coded.
+   The Dashboard page.
+   `subjects` comes from the backend via App.jsx. Material counts and
+   completion numbers are computed by the API (see SubjectOut), so nothing
+   here duplicates progress math — the frontend only renders it.
    --------------------------------------------------------------------------- */
 
 function Dashboard({ subjects, onCreateSubject, userName }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState(null);
 
   const hasSubjects = subjects.length > 0;
-  const allMaterials = subjects.flatMap((subject) => subject.materials);
-  const totalMaterials = allMaterials.length;
-  const completedMaterials = allMaterials.filter(
-    (material) => material.completionStatus === "completed"
-  ).length;
+  const totalMaterials = subjects.reduce((sum, s) => sum + (s.material_count || 0), 0);
+  const completedMaterials = subjects.reduce((sum, s) => sum + (s.completed_materials || 0), 0);
   const overallProgressPercent =
     totalMaterials === 0 ? 0 : Math.round((completedMaterials / totalMaterials) * 100);
 
@@ -26,9 +23,15 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
   // subject lives.
   const recentSubjects = subjects.slice(0, 3);
 
-  function handleCreate(name, description) {
-    onCreateSubject(name, description);
-    setIsModalOpen(false);
+  async function handleCreate(name, description) {
+    setError(null);
+    try {
+      await onCreateSubject(name, description);
+      setIsModalOpen(false);
+    } catch (apiError) {
+      setError(apiError.message || "Could not create the subject. Please try again.");
+      setIsModalOpen(false);
+    }
   }
 
   return (
@@ -49,6 +52,8 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
           Create Subject
         </button>
       </header>
+
+      {error && <p className="form-error">{error}</p>}
 
       {hasSubjects ? (
         <>

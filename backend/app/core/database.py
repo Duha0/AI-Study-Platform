@@ -1,0 +1,32 @@
+"""SQLAlchemy engine/session setup.
+
+`get_db` is a FastAPI dependency; tests override it with an in-memory database.
+"""
+
+from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
+
+from app.core.config import get_settings
+
+settings = get_settings()
+
+# check_same_thread=False is required for SQLite used from FastAPI's threadpool.
+engine = create_engine(
+    settings.database_url,
+    connect_args={"check_same_thread": False} if settings.database_url.startswith("sqlite") else {},
+)
+
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+def get_db():
+    """Yield a database session per request."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

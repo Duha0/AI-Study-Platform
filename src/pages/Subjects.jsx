@@ -2,22 +2,37 @@ import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
 
+/* Subjects page. All data comes from the backend via App.jsx; creation and
+   deletion go through the API handlers passed down, which this page awaits
+   so failures can be shown instead of silently doing nothing. */
+
 function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState(null);
 
-  function handleCreate(name, description) {
-    onCreateSubject(name, description);
-    setIsModalOpen(false);
+  async function handleCreate(name, description) {
+    setError(null);
+    try {
+      await onCreateSubject(name, description);
+      setIsModalOpen(false);
+    } catch (apiError) {
+      setError(apiError.message || "Could not create the subject. Please try again.");
+      setIsModalOpen(false);
+    }
   }
 
-  function handleDeleteClick(subject) {
+  async function handleDeleteClick(subject) {
     const confirmed = window.confirm(
       `Delete "${subject.name}"? This can't be undone.`
     );
-    if (confirmed) {
-      onDeleteSubject(subject.id);
+    if (!confirmed) return;
+
+    setError(null);
+    try {
+      await onDeleteSubject(subject.id);
+    } catch (apiError) {
+      setError(apiError.message || "Could not delete the subject. Please try again.");
     }
-    // If they hit Cancel, confirmed is false and nothing happens.
   }
 
   return (
@@ -36,6 +51,8 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
           Create Subject
         </button>
       </header>
+
+      {error && <p className="form-error">{error}</p>}
 
       <section className="section">
         {subjects.length === 0 ? (

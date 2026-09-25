@@ -33,7 +33,11 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    return RegisterResponse(message="Account created successfully.", user=UserOut.model_validate(user))
+    return RegisterResponse(
+        message="Account created successfully.",
+        user=UserOut.model_validate(user),
+        access_token=create_access_token(str(user.id)),
+    )
 
 
 @router.post("/login", response_model=TokenResponse)

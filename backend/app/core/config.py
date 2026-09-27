@@ -32,8 +32,9 @@ class Settings(BaseSettings):
     # return a clear "not configured" error instead of crashing.
     ai_api_key: str = ""
     ai_provider: str = "openai"  # "openai" | "anthropic"
-    ai_model: str = ""  # provider default is used when empty
-    ai_base_url: str = ""  # override for OpenAI-compatible endpoints
+    # OpenRouter's free router selects an available free model automatically.
+    ai_model: str = "openrouter/free"
+    ai_base_url: str = "https://openrouter.ai/api/v1"
 
 
 @lru_cache

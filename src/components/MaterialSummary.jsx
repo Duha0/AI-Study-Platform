@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { resourcesApi } from "../lib/api";
+import { ApiError, resourcesApi } from "../lib/api";
 
 /* Summary tab inside Material Preview — real AI summaries via the backend.
  *
@@ -25,8 +25,12 @@ function MaterialSummary({ materialId }) {
           setSummary(existing);
           setStatus("ready");
         }
-      } catch {
-        // 404 = none yet — the normal first-visit path.
+      } catch (apiError) {
+        if (cancelled) return;
+        if (!(apiError instanceof ApiError) || apiError.status !== 404) {
+          setError(apiError.message || "Could not load the saved summary.");
+        }
+        setStatus("idle");
       }
     }
 

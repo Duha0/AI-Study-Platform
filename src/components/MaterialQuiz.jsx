@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { quizzesApi } from "../lib/api";
+import { ApiError, quizzesApi } from "../lib/api";
 
 /* Quiz tab — real quizzes generated from the material, scored on the backend.
  *
@@ -33,8 +33,12 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
           if (existing.latest_attempt) setAttempt(existing.latest_attempt);
           setPhase("taking");
         }
-      } catch {
-        // 404 = no quiz yet — normal first-visit path.
+      } catch (apiError) {
+        if (cancelled) return;
+        if (!(apiError instanceof ApiError) || apiError.status !== 404) {
+          setError(apiError.message || "Could not load the saved quiz.");
+        }
+        setPhase("idle");
       }
     }
 

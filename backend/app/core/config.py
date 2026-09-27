@@ -32,8 +32,8 @@ class Settings(BaseSettings):
     # return a clear "not configured" error instead of crashing.
     ai_api_key: str = ""
     ai_provider: str = "openai"  # "openai" | "anthropic"
-    # OpenRouter's free router selects an available free model automatically.
-    ai_model: str = "openrouter/free"
+    # Fixed free model supports OpenAI-compatible JSON response formatting.
+    ai_model: str = "google/gemma-4-31b-it:free"
     ai_base_url: str = "https://openrouter.ai/api/v1"
 
 

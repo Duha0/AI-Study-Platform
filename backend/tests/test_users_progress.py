@@ -73,6 +73,40 @@ def test_progress_updates_after_quiz(client, auth_headers, monkeypatch):
     assert again == progress2
 
 
+def test_progress_average_includes_every_quiz_attempt(client, auth_headers, monkeypatch):
+    payload = {
+        "questions": [
+            {"prompt": "Q1?", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": ""},
+            {"prompt": "Q2?", "options": ["A", "B", "C", "D"], "correct_index": 1, "explanation": ""},
+        ]
+    }
+    _mock_generate_json(monkeypatch, payload)
+    subject, material = _create_ready(client, auth_headers)
+    quiz = client.post(f"/api/materials/{material['id']}/quiz", headers=auth_headers).json()
+
+    first_attempt = [
+        {"question_id": q["id"], "selected_option_id": answer}
+        for q, answer in zip(quiz["questions"], ("a", "b"))
+    ]
+    second_attempt = [
+        {"question_id": q["id"], "selected_option_id": answer}
+        for q, answer in zip(quiz["questions"], ("b", "a"))
+    ]
+    for answers in (first_attempt, second_attempt):
+        response = client.post(
+            f"/api/quizzes/{quiz['id']}/submit",
+            json={"answers": answers},
+            headers=auth_headers,
+        )
+        assert response.status_code == 200
+
+    progress = client.get("/api/progress", headers=auth_headers).json()
+    subject_progress = next(row for row in progress["subjects"] if row["subject_id"] == subject["id"])
+    assert subject_progress["quiz_attempts"] == 2
+    assert subject_progress["average_score_percent"] == 50
+    assert progress["totals"]["average_score_percent"] == 50
+
+
 def _create_ready(client, headers):
     subject = _create_subject(client, headers, name="Physics").json()
     pdf = _pdf_with_text("Newton's laws describe motion.\nForces cause acceleration.")

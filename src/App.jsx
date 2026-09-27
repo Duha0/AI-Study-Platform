@@ -153,6 +153,21 @@ function App() {
     writeTheme(theme);
   }, [theme]);
 
+  useEffect(() => {
+    function handleUnauthorized() {
+      setIsLoggedIn(false);
+      setUser(null);
+      setSubjects([]);
+      setSelectedSubjectId(null);
+      setActivePage("Login");
+      setBootError(null);
+      setIsBooting(false);
+    }
+
+    window.addEventListener("studyai:unauthorized", handleUnauthorized);
+    return () => window.removeEventListener("studyai:unauthorized", handleUnauthorized);
+  }, []);
+
   // Session restoration: validate the stored token against the backend and
   // load the user's real subjects. Without a valid token this skips quietly
   // and the visitor lands on the public pages.

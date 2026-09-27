@@ -70,9 +70,15 @@ def get_user_progress(db: Session, user: User) -> dict:
                 )
             )
         }
+        score_rows = db.execute(
+            select(QuizAttempt.score, QuizAttempt.total)
+            .join(Quiz, QuizAttempt.quiz_id == Quiz.id)
+            .join(Material, Quiz.material_id == Material.id)
+            .where(QuizAttempt.user_id == user.id, Material.subject_id == subject.id)
+        ).all()
 
-        started = completed = attempts = 0
-        scores: list[tuple[int, int | None]] = []
+        started = completed = 0
+        scores = [(row.score, row.total) for row in score_rows]
         for material in materials:
             row = progress_by_material.get(material.id)
             status = row.completion_status if row else "not-started"
@@ -80,12 +86,9 @@ def get_user_progress(db: Session, user: User) -> dict:
                 started += 1
             if status == "completed":
                 completed += 1
-            if row:
-                attempts += row.quiz_attempts
-                if row.last_score is not None and row.last_total:
-                    scores.append((row.last_score, row.last_total))
 
         total = len(materials)
+        attempts = len(score_rows)
         subject_rows.append(
             {
                 "subject_id": subject.id,

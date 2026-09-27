@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { resourcesApi } from "../lib/api";
+import { ApiError, resourcesApi } from "../lib/api";
 
 /* Flashcards tab — real AI-generated flashcards via the backend.
  * Flip/previous/next UX preserved.
@@ -23,9 +23,15 @@ function MaterialFlashcards({ materialId }) {
         if (!cancelled && Array.isArray(existing) && existing.length > 0) {
           setCards(existing);
           setPhase("ready");
+        } else if (!cancelled) {
+          setPhase("idle");
         }
-      } catch {
-        // 404 = none yet.
+      } catch (apiError) {
+        if (cancelled) return;
+        if (!(apiError instanceof ApiError) || apiError.status !== 404) {
+          setError(apiError.message || "Could not load saved flashcards.");
+        }
+        setPhase("idle");
       }
     }
 

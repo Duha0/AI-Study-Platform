@@ -35,6 +35,26 @@ def _mock_generate_json(monkeypatch, payload: dict):
     monkeypatch.setattr(provider, "generate_json", fake)
 
 
+def test_provider_uses_openrouter_free_json_model(monkeypatch):
+    monkeypatch.setattr(provider.settings, "ai_api_key", "test-key")
+    monkeypatch.setattr(provider.settings, "ai_provider", "openai")
+    monkeypatch.setattr(provider.settings, "ai_model", "google/gemma-4-31b-it:free")
+    monkeypatch.setattr(provider.settings, "ai_base_url", "https://openrouter.ai/api/v1")
+    captured = {}
+
+    def fake_post(url, headers, json, timeout):
+        captured.update(url=url, headers=headers, payload=json)
+        return _openai_style('{"ok": true}')
+
+    monkeypatch.setattr(provider.httpx, "post", fake_post)
+
+    assert provider.generate_json("system", "user") == {"ok": True}
+    assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
+    assert captured["headers"]["Authorization"].startswith("Bearer ")
+    assert captured["payload"]["model"] == "google/gemma-4-31b-it:free"
+    assert captured["payload"]["response_format"] == {"type": "json_object"}
+
+
 def _create_ready_material(client, auth_headers):
     """Subject + uploaded material with real extracted text."""
     from tests.test_subjects_materials import _pdf_with_text, _upload_pdf
@@ -80,6 +100,13 @@ def test_summary_generation_persists(client, auth_headers, monkeypatch):
     fetched = client.get(f"/api/materials/{material['id']}/summary", headers=auth_headers)
     assert fetched.status_code == 200
     assert fetched.json()["points"] == ["Lower activation energy", "Highly specific"]
+
+    regenerated = client.post(
+        f"/api/materials/{material['id']}/summary?regenerate=true", headers=auth_headers
+    )
+    assert regenerated.status_code == 200
+    assert regenerated.json()["intro"] == "changed"
+    assert calls["n"] == 1
 
 
 def test_summary_malformed_ai_output_rejected(client, auth_headers, monkeypatch):

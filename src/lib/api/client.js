@@ -68,6 +68,7 @@ export async function request(path, { method = "GET", body, formData, auth = tru
   // state instead of failing on every request.
   if (response.status === 401 && auth) {
     clearAuth();
+    window.dispatchEvent(new Event("studyai:unauthorized"));
   }
 
   if (response.status === 204) return null;

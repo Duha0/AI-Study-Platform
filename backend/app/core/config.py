@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     ai_api_key: str = ""
     ai_provider: str = "openai"  # "openai" | "anthropic"
     # Fixed free model supports OpenAI-compatible JSON response formatting.
-    ai_model: str = "google/gemma-4-31b-it:free"
+    ai_model: str = "nvidia/nemotron-3-super-120b-a12b:free"
     ai_base_url: str = "https://openrouter.ai/api/v1"
 
 

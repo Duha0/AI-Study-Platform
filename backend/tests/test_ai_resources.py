@@ -11,10 +11,10 @@ from app.services.ai.provider import AIServiceError
 
 
 class _FakeResponse:
-    def __init__(self, payload):
+    def __init__(self, payload, status_code=200, text=""):
         self._payload = payload
-        self.status_code = 200
-        self.text = ""
+        self.status_code = status_code
+        self.text = text
 
     def json(self):
         return self._payload
@@ -38,7 +38,7 @@ def _mock_generate_json(monkeypatch, payload: dict):
 def test_provider_uses_openrouter_free_json_model(monkeypatch):
     monkeypatch.setattr(provider.settings, "ai_api_key", "test-key")
     monkeypatch.setattr(provider.settings, "ai_provider", "openai")
-    monkeypatch.setattr(provider.settings, "ai_model", "google/gemma-4-31b-it:free")
+    monkeypatch.setattr(provider.settings, "ai_model", "nvidia/nemotron-3-super-120b-a12b:free")
     monkeypatch.setattr(provider.settings, "ai_base_url", "https://openrouter.ai/api/v1")
     captured = {}
 
@@ -51,8 +51,68 @@ def test_provider_uses_openrouter_free_json_model(monkeypatch):
     assert provider.generate_json("system", "user") == {"ok": True}
     assert captured["url"] == "https://openrouter.ai/api/v1/chat/completions"
     assert captured["headers"]["Authorization"].startswith("Bearer ")
-    assert captured["payload"]["model"] == "google/gemma-4-31b-it:free"
+    assert captured["payload"]["model"] == "nvidia/nemotron-3-super-120b-a12b:free"
     assert captured["payload"]["response_format"] == {"type": "json_object"}
+    assert "models" not in captured["payload"]
+
+
+def _configure_openrouter(monkeypatch):
+    monkeypatch.setattr(provider.settings, "ai_api_key", "test-key")
+    monkeypatch.setattr(provider.settings, "ai_provider", "openai")
+    monkeypatch.setattr(provider.settings, "ai_model", "nvidia/nemotron-3-super-120b-a12b:free")
+    monkeypatch.setattr(provider.settings, "ai_base_url", "https://openrouter.ai/api/v1")
+
+
+def test_provider_tries_free_fallback_after_primary_rate_limit(monkeypatch):
+    _configure_openrouter(monkeypatch)
+    requests = []
+
+    def fake_post(url, headers, json, timeout):
+        requests.append(json)
+        if len(requests) == 1:
+            return _FakeResponse({}, status_code=429, text="provider detail must not leak")
+        return _openai_style('{"fallback": true}')
+
+    monkeypatch.setattr(provider.httpx, "post", fake_post)
+
+    assert provider.generate_json("system", "user") == {"fallback": True}
+    assert len(requests) == 2
+    assert requests[0]["model"] == provider.OPENROUTER_FREE_MODELS[0]
+    assert requests[1]["model"] == provider.OPENROUTER_FREE_MODELS[1]
+    assert requests[1]["response_format"] == {"type": "json_object"}
+
+
+def test_provider_all_free_fallbacks_fail_with_controlled_error(monkeypatch):
+    _configure_openrouter(monkeypatch)
+    requests = []
+
+    def fake_post(url, headers, json, timeout):
+        requests.append(json)
+        return _FakeResponse({}, status_code=429, text="sensitive upstream response")
+
+    monkeypatch.setattr(provider.httpx, "post", fake_post)
+
+    with pytest.raises(AIServiceError, match="All configured OpenRouter free models") as exc_info:
+        provider.generate_json("system", "user")
+
+    assert len(requests) == len(provider.OPENROUTER_FREE_MODELS)
+    assert "sensitive upstream response" not in str(exc_info.value)
+
+
+def test_provider_rejects_invalid_json_after_free_fallbacks(monkeypatch):
+    _configure_openrouter(monkeypatch)
+    calls = {"count": 0}
+
+    def fake_post(url, headers, json, timeout):
+        calls["count"] += 1
+        return _openai_style("not valid JSON")
+
+    monkeypatch.setattr(provider.httpx, "post", fake_post)
+
+    with pytest.raises(AIServiceError, match="not valid JSON"):
+        provider.generate_json("system", "user")
+
+    assert calls["count"] == len(provider.OPENROUTER_FREE_MODELS)
 
 
 def _create_ready_material(client, auth_headers):

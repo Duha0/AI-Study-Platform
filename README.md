@@ -106,7 +106,39 @@ npm run dev
 Open http://localhost:5173, register an account, create a subject, upload
 a text-based PDF.
 
-### 3. Tests
+### 3. Android app
+
+Android development requires Android Studio with the Android SDK, plus a
+Java 21 JDK. The Android app bundles the same Vite build as the web app.
+
+For an Android emulator with the backend running on this computer:
+
+```powershell
+Copy-Item .env.android.example .env.android
+npm run android:sync:dev
+npm run android:open
+```
+
+`.env.android` is local-only. Its `10.0.2.2` address reaches the host from
+the standard Android emulator; for a physical device, set `VITE_API_URL`
+to the computer's reachable LAN address. The debug Android build permits
+HTTP for this local development connection. Release builds retain Android's
+normal cleartext restrictions and must use an HTTPS API URL.
+The backend default now allows Capacitor's `https://localhost` origin; if
+`CORS_ORIGINS` is explicitly set in `backend/.env` or production, include
+that origin in the configured list.
+
+For a release build, set `VITE_API_URL` to the real HTTPS FastAPI deployment
+in the build environment, then run `npm run android:sync` and build the
+release variant from Android Studio. `VITE_*` values are public app
+configuration, never backend secrets. Keep AI provider keys in the backend.
+
+The Android system Back button returns from a subject to its list, returns
+to Dashboard from other signed-in pages, and returns Login/Register to the
+landing screen. At the root page it exits the app. Web navigation remains
+unchanged.
+
+### 4. Tests
 
 Linux / macOS (bash):
 
@@ -137,7 +169,7 @@ git. Locally, copy the template and fill values in: `cp env.example .env`
 | `DATABASE_URL` | `sqlite:///./studyai.db` | SQLAlchemy URL. Use a `postgres://` URL in production. |
 | `SECRET_KEY` | `change-me-in-production` | JWT signing key. **Set a real one in production** (`python3 -c "import secrets; print(secrets.token_hex(32))"`). |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `10080` (7 days) | JWT lifetime. |
-| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Comma-separated browser origins allowed to call the API. |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173,https://localhost` | Comma-separated browser/Capacitor origins allowed to call the API. |
 | `UPLOADS_DIR` | `./uploads` | Where uploaded PDFs are written. |
 | `MAX_UPLOAD_BYTES` | `20971520` (20 MB) | Upload size limit. |
 | `AI_PROVIDER` | `openai` | `openai` (any OpenAI-compatible endpoint) or `anthropic`. |

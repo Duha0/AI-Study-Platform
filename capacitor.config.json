@@ -1,0 +1,8 @@
+{
+  "appId": "com.duha0.studyai",
+  "appName": "StudyAI",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}

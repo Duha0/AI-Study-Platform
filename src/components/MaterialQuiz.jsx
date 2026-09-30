@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { quizzesApi } from "../lib/api";
+import VoiceControls from "./VoiceControls";
 
 /* Quiz tab — real quizzes generated from the material, scored on the backend.
  *
@@ -207,6 +208,9 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
         Question {currentIndex + 1} of {quiz.questions.length}
       </p>
       <p className="quiz-question">{currentQuestion?.prompt}</p>
+      {currentQuestion?.prompt && (
+        <VoiceControls label="this quiz question" text={currentQuestion.prompt} />
+      )}
 
       <div className="quiz-options">
         {(currentQuestion?.options || []).map((option) => (

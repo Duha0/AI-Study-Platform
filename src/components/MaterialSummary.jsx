@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { resourcesApi } from "../lib/api";
+import VoiceControls from "./VoiceControls";
 
 /* Summary tab inside Material Preview — real AI summaries via the backend.
  *
@@ -73,6 +74,10 @@ function MaterialSummary({ materialId }) {
 
       {status === "ready" && summary && (
         <>
+          <VoiceControls
+            label="summary"
+            text={[summary.intro, ...(summary.points || [])].filter(Boolean).join(". ")}
+          />
           <p className="summary-text">{summary.intro}</p>
           <ul className="summary-list">
             {(summary.points || []).map((point) => (

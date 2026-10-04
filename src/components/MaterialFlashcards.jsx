@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { resourcesApi } from "../lib/api";
+import VoiceControls from "./VoiceControls";
 
 /* Flashcards tab — real AI-generated flashcards via the backend.
  * Flip/previous/next UX preserved.
@@ -112,6 +113,13 @@ function MaterialFlashcards({ materialId }) {
         <p className="flashcard-text">{isFlipped ? card?.back : card?.front}</p>
         <span className="flashcard-hint">Click to flip</span>
       </button>
+
+      {card && (
+        <VoiceControls
+          label={isFlipped ? "flashcard answer" : "flashcard question"}
+          text={isFlipped ? card.back : card.front}
+        />
+      )}
 
       <div className="flashcard-controls">
         <button

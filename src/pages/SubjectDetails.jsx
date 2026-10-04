@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import MaterialSummary from "../components/MaterialSummary";
 import MaterialQuiz from "../components/MaterialQuiz";
 import MaterialFlashcards from "../components/MaterialFlashcards";
+import StudyVideos from "../components/StudyVideos";
 import { materialsApi, subjectsApi } from "../lib/api";
 
 /* The Subject Details page.
@@ -518,6 +519,17 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                   >
                     Flashcards
                   </button>
+                  <button
+                    type="button"
+                    className={
+                      activeResourceTab === "videos"
+                        ? "button-primary"
+                        : "button-secondary"
+                    }
+                    onClick={() => setActiveResourceTab("videos")}
+                  >
+                    Study Videos
+                  </button>
                 </div>
 
                 {/* Keyed by the material's id so switching materials
@@ -549,6 +561,15 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                         <MaterialFlashcards
                           key={selectedMaterial.id}
                           materialId={selectedMaterial.id}
+                        />
+                      )}
+                      {activeResourceTab === "videos" && (
+                        <StudyVideos
+                          key={selectedMaterial.id}
+                          materialId={selectedMaterial.id}
+                          materialTitle={selectedMaterial.filename}
+                          subjectTitle={subject.name}
+                          subjectDescription={subject.description}
                         />
                       )}
                     </>

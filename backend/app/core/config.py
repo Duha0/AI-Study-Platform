@@ -10,8 +10,8 @@ class Settings(BaseSettings):
 
     # --- App ---
     app_name: str = "StudyAI API"
-    # Comma-separated list of allowed CORS origins (the Vite dev server).
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    # Comma-separated origins for Vite development and the Capacitor WebView.
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,https://localhost"
 
     # --- Database ---
     # Swap to a PostgreSQL URL in production; the models stay the same.

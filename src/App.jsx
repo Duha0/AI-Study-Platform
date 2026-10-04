@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import "./App.css";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
@@ -260,6 +262,32 @@ function App() {
     setSelectedSubjectId(null);
     handleNavigate("Landing");
   }
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined;
+
+    let disposed = false;
+    let listener;
+    CapacitorApp.addListener("backButton", () => {
+      if (selectedSubjectId !== null) {
+        setSelectedSubjectId(null);
+      } else if (isLoggedIn && activePage !== "Dashboard") {
+        setActivePage("Dashboard");
+      } else if (!isLoggedIn && ["Login", "Register"].includes(activePage)) {
+        setActivePage("Landing");
+      } else {
+        CapacitorApp.exitApp();
+      }
+    }).then((registeredListener) => {
+      if (disposed) registeredListener.remove();
+      else listener = registeredListener;
+    });
+
+    return () => {
+      disposed = true;
+      listener?.remove();
+    };
+  }, [selectedSubjectId, isLoggedIn, activePage]);
 
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
 

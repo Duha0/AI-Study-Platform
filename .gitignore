@@ -39,3 +39,4 @@ backend/uploads/
 .env
 .env.local
 .env.*.local
+.env.android

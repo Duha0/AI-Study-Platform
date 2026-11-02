@@ -128,8 +128,10 @@ def test_s3_credentials_not_printed(monkeypatch, capsys):
 
     storage_mod._storage = None
 
-    with pytest.raises(ValueError):
-        get_storage()
+    # With boto3 installed, dummy credentials are accepted at construction time
+    # (boto3 validates credentials only on actual API calls).
+    backend = get_storage()
+    assert isinstance(backend, S3Storage)
 
     captured = capsys.readouterr()
     assert "sk-secret-key-value" not in captured.out

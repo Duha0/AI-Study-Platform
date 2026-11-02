@@ -27,10 +27,17 @@ app.add_middleware(
 
 @app.on_event("startup")
 def on_startup() -> None:
-    # Simple, maintainable local-dev "migration": create any missing tables.
-    # Alembic can take over later without model changes.
-    Base.metadata.create_all(bind=engine)
-    logger.info("Database initialized at %s", settings.database_url)
+    # Local development only: create any missing tables. In production,
+    # Alembic manages the schema; relying on create_all() silently masks
+    # migration drift and must not be the production path.
+    if settings.database_url.startswith("sqlite"):
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database initialized (create_all) at %s", settings.database_url)
+    else:
+        logger.info(
+            "Database at %s — schema managed by Alembic, not create_all()",
+            settings.database_url,
+        )
 
 
 app.include_router(auth.router)

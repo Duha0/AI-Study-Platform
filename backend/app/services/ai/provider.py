@@ -85,6 +85,9 @@ def generate_json(system_prompt: str, user_prompt: str) -> dict[str, Any]:
         }
     else:  # openai-compatible
         headers = {"Authorization": f"Bearer {settings.ai_api_key}"}
+        if settings.ai_base_url and "openrouter.ai" in settings.ai_base_url:
+            headers["HTTP-Referer"] = "http://localhost:5173"
+            headers["X-Title"] = "StudyAI"
         base = (settings.ai_base_url or "https://api.openai.com/v1").rstrip("/")
         url = f"{base}/chat/completions"
         payload = {
@@ -102,8 +105,7 @@ def generate_json(system_prompt: str, user_prompt: str) -> dict[str, Any]:
         raise AIServiceError(f"Could not reach the AI provider: {exc}") from exc
 
     if response.status_code != 200:
-        detail = response.text[:300]
-        raise AIServiceError(f"AI provider error ({response.status_code}): {detail}")
+        raise AIServiceError(f"AI provider error ({response.status_code})")
 
     try:
         body = response.json()

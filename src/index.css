@@ -1,6 +1,7 @@
-/* Global resets and base typography. main.jsx already imports this file. */
-
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap");
+/* Global resets and base typography. main.jsx already imports this file.
+   Google Fonts are loaded non-blocking via <link> in index.html to avoid
+   render-blocking @import on Android WebView (which can cause a white
+   screen if the font request hangs). */
 
 * {
   box-sizing: border-box;
@@ -10,6 +11,7 @@ html,
 body,
 #root {
   height: 100%;
+  -webkit-tap-highlight-color: transparent; /* cleaner Android touch feedback */
 }
 
 body {

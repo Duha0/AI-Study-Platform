@@ -25,9 +25,16 @@ function MaterialSummary({ materialId }) {
         if (!cancelled && existing) {
           setSummary(existing);
           setStatus("ready");
+          return;
+        }
+        if (!cancelled) {
+          setStatus("idle");
         }
       } catch {
         // 404 = none yet — the normal first-visit path.
+        if (!cancelled) {
+          setStatus("idle");
+        }
       }
     }
 

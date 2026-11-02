@@ -36,6 +36,10 @@
   --radius: 14px;
   --gap: 24px;
   --sidebar-width: 240px;
+
+  /* Android safe areas: status bar / notch at top, gesture nav at bottom */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 /* Dark palette. These are chosen for contrast on a dark surface, not
@@ -292,6 +296,10 @@
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .button-primary:hover {
@@ -308,6 +316,10 @@
   font-size: 15px;
   font-weight: 500;
   cursor: pointer;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .button-secondary:hover {
@@ -1549,16 +1561,15 @@
     flex-direction: column;
   }
 
-  /* The sidebar becomes a two-row header: logo and controls on the first
-     row, navigation across the second. Nothing scrolls sideways. */
+  /* The sidebar becomes a compact header bar on phones. */
   .sidebar {
     width: 100%;
     height: auto;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
+    gap: 8px;
+    padding: 8px 12px;
     border-right: none;
     border-bottom: 1px solid var(--line);
     z-index: 10;
@@ -1568,12 +1579,23 @@
     flex: 1;
     min-width: 0;
     padding-left: 0;
+    gap: 6px;
+  }
+
+  .sidebar-mark {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+  }
+
+  .sidebar-name {
+    font-size: 18px;
   }
 
   .sidebar-footer {
     flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     margin-top: 0;
     padding-top: 0;
     border-top: none;
@@ -1581,7 +1603,7 @@
 
   .theme-toggle {
     width: auto;
-    padding: 9px;
+    padding: 7px;
   }
 
   /* Icon only — the label would crowd the header. */
@@ -1606,14 +1628,15 @@
   .sidebar-nav {
     flex-basis: 100%;
     flex-direction: row;
-    gap: 6px;
+    gap: 4px;
   }
 
   .nav-link {
     flex: 1;
     justify-content: center;
-    padding: 9px 6px;
-    font-size: 14px;
+    padding: 6px 3px;
+    font-size: 12.5px;
+    gap: 5px;
   }
 
   .nav-icon {
@@ -1621,13 +1644,22 @@
   }
 
   .main {
-    padding: 26px 18px 48px;
+    padding: 20px 14px calc(44px + var(--safe-area-bottom));
   }
 
   .welcome {
     align-items: flex-start;
-    gap: 18px;
-    margin-bottom: 32px;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .welcome-title {
+    font-size: clamp(22px, 4vw, 32px);
+  }
+
+  .welcome-subtitle {
+    margin: 4px 0 0;
+    font-size: 14px;
   }
 
   .button-primary {
@@ -1635,7 +1667,7 @@
   }
 
   .section {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
   }
 
   .subject-grid {
@@ -1659,7 +1691,62 @@
 
   .progress-card,
   .subject-card {
-    padding: 18px;
+    padding: 16px;
+  }
+
+  /* Compact stat cards on small phones — 2-column grid, tighter padding. */
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  /* Force stats into a 2-column grid on narrow screens. */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Tighter subject cards on small phones. */
+  .subject-grid {
+    gap: 16px;
+  }
+
+  .subject-card {
+    padding: 16px;
+  }
+
+  /* Fix delete button overlap on small phones: stack the delete button
+     below the card instead of absolutely overlaying it, and remove the
+     extra right padding that reserved space for the overlay. */
+  .subject-card-shell {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .subject-card-clickable {
+    padding-right: 16px;
+  }
+
+  .subject-delete-button {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 9px 12px;
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    font-size: 14px;
+    font-weight: 500;
+    justify-content: center;
+  }
+
+  .subject-delete-button svg {
+    display: none;
   }
 
   .modal-card {
@@ -1702,6 +1789,16 @@
     width: 48%;
   }
 
+  /* Slightly shorter flashcard on small phones so it doesn't dominate. */
+  .flashcard {
+    min-height: 140px;
+    padding: 20px;
+  }
+
+  .flashcard-text {
+    font-size: 16px;
+  }
+
   .landing-hero-actions {
     flex-direction: column;
   }
@@ -1713,5 +1810,26 @@
 
   .auth-card {
     padding: 24px;
+  }
+
+  /* Tighter material preview padding on small phones. */
+  .material-preview {
+    padding: 16px;
+  }
+
+  .material-preview-actions {
+    gap: 8px;
+  }
+
+  .material-preview-actions .button-primary,
+  .material-preview-actions .button-secondary {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Quiz options stay full-width with generous touch targets. */
+  .quiz-option {
+    padding: 14px 16px;
+    font-size: 15px;
   }
 }

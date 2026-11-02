@@ -35,11 +35,7 @@ function VoiceControls({ text, label = "study content" }) {
   );
 
   if (!isAvailable) {
-    return (
-      <span className="voice-unavailable" role="status">
-        Voice playback isn’t available on this device.
-      </span>
-    );
+    return null;
   }
 
   return (

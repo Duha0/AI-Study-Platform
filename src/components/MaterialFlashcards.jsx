@@ -24,9 +24,16 @@ function MaterialFlashcards({ materialId }) {
         if (!cancelled && Array.isArray(existing) && existing.length > 0) {
           setCards(existing);
           setPhase("ready");
+          return;
+        }
+        if (!cancelled) {
+          setPhase("idle");
         }
       } catch {
         // 404 = none yet.
+        if (!cancelled) {
+          setPhase("idle");
+        }
       }
     }
 

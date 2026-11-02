@@ -11,7 +11,30 @@
 
 import { getToken, clearAuth } from "../storage";
 
-export const API_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+function resolveApiBase() {
+  const envBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
+  if (envBase) return envBase;
+
+  // Capacitor/Android: use localhost with adb reverse, or emulator host
+  try {
+    if (typeof window !== "undefined") {
+      const cap = window.Capacitor;
+      if (cap) {
+        const platform = cap.getPlatform ? cap.getPlatform() : cap.platform;
+        if (platform === "android" || platform === "ios") {
+          // With adb reverse tcp:8000 tcp:8000, device localhost reaches host
+          return "http://localhost:8000";
+        }
+      }
+    }
+  } catch {
+    // ignore
+  }
+
+  return "";
+}
+
+export const API_BASE = resolveApiBase();
 
 export class ApiError extends Error {
   /**

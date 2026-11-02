@@ -119,3 +119,38 @@ def test_me_rejects_missing_and_bad_tokens(client):
     assert r.status_code == 401
     garbage = client.get("/api/auth/me", headers={"Authorization": "Bearer not.a.token"})
     assert garbage.status_code == 401
+
+
+def test_rate_limits_register_after_excessive_requests(client, monkeypatch):
+    """Register endpoint returns 429 after too many requests from same client."""
+    import os
+    monkeypatch.setenv("STUDYAI_TESTING", "")
+    # Exhaust the rate limit (5 requests per 60s window).
+    for _ in range(5):
+        client.post(
+            "/api/auth/register",
+            json={"full_name": "Rate", "email": f"ratelimit{_}" + "@example.com", "password": "longpassword1"},
+        )
+    # The 6th request should be rate limited.
+    response = client.post(
+        "/api/auth/register",
+        json={"full_name": "Rate", "email": "ratelimit_final@example.com", "password": "longpassword1"},
+    )
+    assert response.status_code == 429, response.text
+    assert "Too many requests" in response.json()["detail"]
+
+
+def test_expired_jwt_rejected(client, monkeypatch):
+    """An expired JWT is rejected with 401."""
+    from datetime import datetime, timedelta, timezone
+    import jwt
+    from app.core.config import get_settings
+
+    settings = get_settings()
+    expired_payload = {
+        "sub": "1",
+        "exp": datetime.now(timezone.utc) - timedelta(minutes=5),
+    }
+    expired_token = jwt.encode(expired_payload, settings.secret_key, algorithm=settings.jwt_algorithm)
+    response = client.get("/api/auth/me", headers={"Authorization": f"Bearer {expired_token}"})
+    assert response.status_code == 401

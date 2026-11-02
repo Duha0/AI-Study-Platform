@@ -9,7 +9,7 @@ from app.core.config import get_settings
 from app.core.database import get_db
 from app.models.models import Material, User
 from app.schemas.schemas import MaterialDetail, MaterialOut, UploadResponse
-from app.services import local_file_storage
+from app.services.storage import storage as get_storage
 from app.services.pdf_extraction import EmptyExtractionError, ExtractionError, extract_pdf_text
 from app.services.progress import mark_started
 
@@ -61,7 +61,7 @@ async def upload_material(
         limit_mb = settings.max_upload_bytes // (1024 * 1024)
         raise HTTPException(status_code=413, detail=f"File is too large. Maximum is {limit_mb} MB.")
 
-    stored_name = local_file_storage.save_pdf(content)
+    stored_name = get_storage().save_pdf(content)
     material = Material(
         subject_id=subject.id,
         user_id=current_user.id,
@@ -100,7 +100,7 @@ def delete_material(
     db: Session = Depends(get_db),
 ):
     material = get_owned_material(db, current_user, material_id)
-    local_file_storage.delete_file(material.stored_name)
+    get_storage().delete_file(material.stored_name)
     db.delete(material)
     db.commit()
 

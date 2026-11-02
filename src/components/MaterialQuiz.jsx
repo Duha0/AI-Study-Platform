@@ -33,9 +33,16 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
           setQuiz(existing);
           if (existing.latest_attempt) setAttempt(existing.latest_attempt);
           setPhase("taking");
+          return;
+        }
+        if (!cancelled) {
+          setPhase("idle");
         }
       } catch {
         // 404 = no quiz yet — normal first-visit path.
+        if (!cancelled) {
+          setPhase("idle");
+        }
       }
     }
 

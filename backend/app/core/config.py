@@ -27,6 +27,16 @@ class Settings(BaseSettings):
     uploads_dir: str = "./uploads"
     max_upload_bytes: int = 20 * 1024 * 1024  # 20 MB
 
+    # --- Storage backend ---
+    # "local" (default) stores files on the local filesystem.
+    # "s3" stores files in an S3-compatible bucket (S3, MinIO, R2, etc.).
+    storage_backend: str = "local"
+    s3_endpoint_url: str = ""
+    s3_bucket_name: str = ""
+    s3_access_key_id: str = ""
+    s3_secret_access_key: str = ""
+    s3_region: str = "us-east-1"
+
     # --- AI provider ---
     # Leave ai_api_key empty to run without AI generation; endpoints then
     # return a clear "not configured" error instead of crashing.

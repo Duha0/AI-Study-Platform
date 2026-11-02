@@ -4,6 +4,9 @@ import os
 import sys
 from pathlib import Path
 
+# Skip rate limiting during test runs.
+os.environ["STUDYAI_TESTING"] = "1"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine

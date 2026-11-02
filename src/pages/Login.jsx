@@ -23,6 +23,9 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
     setError(null);
     try {
       const response = await authApi.login(email.trim(), password);
+      if (!response || !response.access_token) {
+        throw new Error("Login failed: invalid server response.");
+      }
       setToken(response.access_token);
 
       // The login endpoint returns only a token — fetch the profile so the

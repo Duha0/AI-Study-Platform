@@ -225,3 +225,24 @@ def test_not_configured_ai_returns_clear_error(client, auth_headers, fake_ai):
         response = client.post(f"/api/materials/{material['id']}/{path}", headers=auth_headers)
         assert response.status_code == 503
         assert "not configured" in response.json()["detail"].lower()
+
+
+def test_ai_provider_error_does_not_leak_internals(client, auth_headers, monkeypatch):
+    """AI provider errors must not leak provider response bodies to clients."""
+    from app.services.ai import provider
+    from app.services.ai.provider import AIServiceError
+
+    class _ErrorResponse:
+        status_code = 502
+        text = "SENSITIVE_PROVIDER_INTERNALS_SHOULD_NOT_LEAK"
+
+    def _raise_provider_error(system_prompt, user_prompt):
+        raise AIServiceError("AI provider error (502)", not_configured=False)
+
+    monkeypatch.setattr(provider, "generate_json", _raise_provider_error)
+
+    _, material = _create_ready_material(client, auth_headers)
+    response = client.post(f"/api/materials/{material['id']}/summary", headers=auth_headers)
+    assert response.status_code == 502
+    detail = response.json()["detail"]
+    assert "SENSITIVE_PROVIDER_INTERNALS_SHOULD_NOT_LEAK" not in detail

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { usersApi } from "../lib/api";
 import { STUDY_LEVELS } from "../lib/storage";
+import { t } from "../lib/i18n";
 
 // Onboarding saves study preferences to the user's backend profile. Shown
 // once after Register (App.jsx routes here before the Dashboard). The
@@ -21,7 +22,7 @@ function Onboarding({ onComplete }) {
       const updatedUser = await usersApi.completeOnboarding(studying.trim(), level);
       onComplete(updatedUser);
     } catch (apiError) {
-      setError(apiError.message || "Could not save your preferences. Please try again.");
+      setError(apiError.message || t("onboarding.could_not_save"));
     } finally {
       setIsSubmitting(false);
     }
@@ -30,25 +31,25 @@ function Onboarding({ onComplete }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-heading">Let's personalize your StudyAI experience</h1>
-        <p className="auth-subtitle">Just a couple of quick questions to get started.</p>
+        <h1 className="auth-heading">{t("onboarding.title")}</h1>
+        <p className="auth-subtitle">{t("onboarding.subtitle")}</p>
 
         {error && <p className="form-error">{error}</p>}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="onboarding-subject">What are you studying?</label>
+            <label htmlFor="onboarding-subject">{t("onboarding.what_are_you_studying")}</label>
             <input
               id="onboarding-subject"
               type="text"
               value={studying}
               onChange={(event) => setStudying(event.target.value)}
-              placeholder="e.g. Biology, Web Development, French"
+              placeholder={t("onboarding.subject_placeholder")}
             />
           </div>
 
           <div className="field">
-            <label htmlFor="onboarding-level">What is your study level?</label>
+            <label htmlFor="onboarding-level">{t("onboarding.what_is_your_study_level")}</label>
             <select
               id="onboarding-level"
               value={level}
@@ -63,7 +64,7 @@ function Onboarding({ onComplete }) {
           </div>
 
           <button type="submit" className="button-primary auth-submit" disabled={isSubmitting}>
-            {isSubmitting ? "Saving…" : "Continue to StudyAI"}
+            {isSubmitting ? t("onboarding.saving") : t("onboarding.continue")}
           </button>
         </form>
       </div>

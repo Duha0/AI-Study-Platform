@@ -4,6 +4,7 @@ import MaterialQuiz from "../components/MaterialQuiz";
 import MaterialFlashcards from "../components/MaterialFlashcards";
 import StudyVideos from "../components/StudyVideos";
 import { materialsApi, subjectsApi } from "../lib/api";
+import { t } from "../lib/i18n";
 
 /* The Subject Details page.
  *
@@ -20,16 +21,16 @@ import { materialsApi, subjectsApi } from "../lib/api";
 // still the authority — it re-checks and returns a 413 with its own message.
 const MAX_FILE_MB = 20;
 
-const COMPLETION_LABELS = {
-  "not-started": "Not Started",
-  "in-progress": "In Progress",
-  completed: "Completed",
+const COMPLETION_LABELS_KEYS = {
+  "not-started": "stats.in_progress",
+  "in-progress": "stats.in_progress",
+  completed: "stats.materials_completed",
 };
 
-const STATUS_LABELS = {
-  processing: "Processing",
-  ready: "Ready",
-  failed: "Failed",
+const STATUS_LABELS_KEYS = {
+  processing: "details.processing",
+  ready: "details.processed_and_ready",
+  failed: "details.this_pdf_could_not_be_processed",
 };
 
 // Turns a raw byte count into something readable.
@@ -49,8 +50,8 @@ function formatUploadedLabel(isoDate) {
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
-  if (sameDay) return "Uploaded just now";
-  return `Uploaded ${date.toLocaleDateString(undefined, {
+  if (sameDay) return t("details.uploading");
+  return `${t("details.uploaded_on")} ${date.toLocaleDateString(undefined, {
     month: "short",
     day: "numeric",
   })}`;
@@ -86,7 +87,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
         setLoadError(null);
       } catch (apiError) {
         setLoadError(
-          apiError.message || "Could not load this subject. Please try again."
+          apiError.message || t("details.could_not_load_subject")
         );
         throw apiError;
       } finally {
@@ -121,7 +122,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
       .catch((apiError) => {
         if (cancelled) return;
         setLoadError(
-          apiError.message || "Could not load this subject. Please try again."
+          apiError.message || t("details.could_not_load_subject")
         );
         setIsLoading(false);
       });
@@ -148,9 +149,9 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
           className="button-secondary details-back-button"
           onClick={onBack}
         >
-          ← Back to Subjects
+          {t("details.back_to_subjects")}
         </button>
-        <p className="coming-soon">This subject could not be found.</p>
+        <p className="coming-soon">{t("details.this_subject_could_not_be_found")}</p>
       </>
     );
   }
@@ -172,11 +173,11 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
       file.type !== "application/pdf" &&
       !file.name.toLowerCase().endsWith(".pdf")
     ) {
-      setUploadError("Only PDF files are supported.");
+      setUploadError(t("details.only_pdf_files"));
       return;
     }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
-      setUploadError(`File is too large. Maximum is ${MAX_FILE_MB} MB.`);
+      setUploadError(t("details.file_is_too_large", { max: MAX_FILE_MB }));
       return;
     }
 
@@ -191,14 +192,14 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
         if (result.material.status === "failed") {
           setUploadError(
             result.material.status_message ||
-              "This PDF could not be processed."
+              t("details.this_pdf_could_not_be_processed")
           );
         }
         return refreshEverything();
       })
       .catch((apiError) => {
         setUploadError(
-          apiError.message || "Upload failed. Please check the file and try again."
+          apiError.message || t("details.upload_failed")
         );
       })
       .finally(() => {
@@ -221,7 +222,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
 
   function handleDeleteMaterial(material) {
     const confirmed = window.confirm(
-      `Delete "${material.filename}"? This can't be undone.`
+      t("details.delete_material_confirm", { filename: material.filename })
     );
     if (!confirmed) return; // Cancel — nothing changes
 
@@ -238,7 +239,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
       })
       .catch((apiError) => {
         setUploadError(
-          apiError.message || "Could not delete the material. Please try again."
+          apiError.message || t("details.could_not_delete_material")
         );
       });
   }
@@ -256,7 +257,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
         className="button-secondary details-back-button"
         onClick={onBack}
       >
-        ← Back to Subjects
+        {t("details.back_to_subjects")}
       </button>
 
       <header className="welcome">
@@ -271,7 +272,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
             <h1 className="welcome-title">{subject.name}</h1>
           </div>
           <p className="welcome-subtitle">
-            {subject.description || "No description yet."}
+            {subject.description || t("details.no_description_yet")}
           </p>
         </div>
 
@@ -281,7 +282,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
           onClick={handleUploadClick}
           disabled={isUploading || Boolean(loadError)}
         >
-          {isUploading ? "Uploading…" : "Upload Material"}
+          {isUploading ? t("details.uploading") : t("details.upload_material")}
         </button>
 
         {/* Hidden — the button above opens it. Restricted to PDFs, per the
@@ -297,7 +298,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
 
       {uploadError && <p className="form-error">{uploadError}</p>}
 
-      {isLoading && <p className="coming-soon">Loading materials…</p>}
+      {isLoading && <p className="coming-soon">{t("details.loading_materials")}</p>}
 
       {loadError && !isLoading && (
         <>
@@ -307,7 +308,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
             className="button-secondary"
             onClick={() => loadDetail(true).catch(() => {})}
           >
-            Try again
+            {t("details.try_again")}
           </button>
         </>
       )}
@@ -318,7 +319,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
             <div className="stats-grid">
               <article className="stat-card">
                 <p className="stat-value">{materials.length}</p>
-                <p className="stat-label">Materials</p>
+                <p className="stat-label">{t("stats.materials")}</p>
               </article>
 
               <article className="stat-card">
@@ -329,7 +330,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     ).length
                   }
                 </p>
-                <p className="stat-label">In progress</p>
+                <p className="stat-label">{t("stats.in_progress")}</p>
               </article>
 
               <article className="stat-card">
@@ -340,27 +341,25 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     ).length
                   }
                 </p>
-                <p className="stat-label">Materials completed</p>
+                <p className="stat-label">{t("stats.materials_completed")}</p>
               </article>
             </div>
           </section>
 
           <section className="section">
-            <h2 className="section-title">Materials</h2>
+            <h2 className="section-title">{t("details.materials")}</h2>
 
             {materials.length === 0 ? (
               <div className="empty-state">
-                <h2 className="empty-state-title">No study materials yet</h2>
-                <p className="empty-state-text">
-                  Upload a PDF to start learning.
-                </p>
+                <h2 className="empty-state-title">{t("details.no_study_materials_yet")}</h2>
+                <p className="empty-state-text">{t("details.upload_a_pdf")}</p>
                 <button
                   type="button"
                   className="button-primary"
                   onClick={handleUploadClick}
                   disabled={isUploading}
                 >
-                  Upload Material
+                  {t("details.upload_material")}
                 </button>
               </div>
             ) : (
@@ -387,7 +386,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                           <span
                             className={`material-status-badge material-status-${material.status}`}
                           >
-                            {STATUS_LABELS[material.status] || material.status}
+                            {t(STATUS_LABELS_KEYS[material.status] || material.status)}
                           </span>
                           <span
                             className={`completion-badge completion-${
@@ -395,18 +394,16 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                             }`}
                           >
                             {
-                              COMPLETION_LABELS[
-                                material.completion_status || "not-started"
-                              ]
+                              t(COMPLETION_LABELS_KEYS[material.completion_status || "not-started"])
                             }
                           </span>
                         </div>
                         <p className="material-meta">
-                          PDF · {formatFileSize(material.size_bytes)}
+                          {t("details.pdf")} · {formatFileSize(material.size_bytes)}
                           {material.status === "failed" &&
                             material.status_message
-                            ? ` · ${material.status_message}`
-                            : ""}
+                              ? ` · ${material.status_message}`
+                              : ""}
                         </p>
                       </div>
 
@@ -420,7 +417,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                       className="material-delete-button"
                       onClick={() => handleDeleteMaterial(material)}
                       aria-label={`Delete ${material.filename}`}
-                      title="Delete material"
+                      title={t("common.delete")}
                     >
                       <svg
                         viewBox="0 0 24 24"
@@ -443,18 +440,15 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
           {!selectedMaterial && materials.length > 0 && (
             <section className="section">
               <div className="empty-state">
-                <h2 className="empty-state-title">Select a material</h2>
-                <p className="empty-state-text">
-                  Choose a material from the list above to see its preview and
-                  open its Summary, Quiz, or Flashcards.
-                </p>
+                <h2 className="empty-state-title">{t("details.select_a_material")}</h2>
+                <p className="empty-state-text">{t("details.select_a_material_desc")}</p>
               </div>
             </section>
           )}
 
           {selectedMaterial && (
             <section className="section">
-              <h2 className="section-title">Material Preview</h2>
+              <h2 className="section-title">{t("details.material_preview")}</h2>
 
               <article className="material-preview">
                 <p className="material-preview-filename">
@@ -462,24 +456,23 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                 </p>
 
                 <div className="material-preview-badges">
-                  <span className="material-preview-type">PDF</span>
+                  <span className="material-preview-type">{t("details.pdf")}</span>
                   <span
                     className={`material-status-badge material-status-${selectedMaterial.status}`}
                   >
                     {selectedMaterial.status === "processing"
-                      ? "Processing material…"
-                      : STATUS_LABELS[selectedMaterial.status] ||
-                        selectedMaterial.status}
+                      ? t("details.processing")
+                      : t(STATUS_LABELS_KEYS[selectedMaterial.status] || selectedMaterial.status)}
                   </span>
                 </div>
 
                 <p className="material-preview-description">
                   {selectedMaterial.status === "failed"
                     ? selectedMaterial.status_message ||
-                      "This PDF could not be processed."
+                      t("details.this_pdf_could_not_be_processed")
                     : selectedMaterial.status === "ready"
-                      ? "Processed and ready — generate a summary, quiz, or flashcards below."
-                      : "Processing…"}
+                      ? t("details.processed_and_ready")
+                      : t("details.processing")}
                 </p>
 
                 {/* These three buttons double as tabs: the active one is
@@ -495,7 +488,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     }
                     onClick={() => setActiveResourceTab("summary")}
                   >
-                    Generate Summary
+                    {t("details.generate_summary")}
                   </button>
                   <button
                     type="button"
@@ -506,7 +499,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     }
                     onClick={() => setActiveResourceTab("quiz")}
                   >
-                    Generate Quiz
+                    {t("details.generate_quiz")}
                   </button>
                   <button
                     type="button"
@@ -517,7 +510,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     }
                     onClick={() => setActiveResourceTab("flashcards")}
                   >
-                    Flashcards
+                    {t("details.flashcards")}
                   </button>
                   <button
                     type="button"
@@ -528,7 +521,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                     }
                     onClick={() => setActiveResourceTab("videos")}
                   >
-                    Study Videos
+                    {t("details.study_videos")}
                   </button>
                 </div>
 
@@ -539,8 +532,8 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                   {selectedMaterial.status !== "ready" ? (
                     <p className="resource-placeholder">
                       {selectedMaterial.status === "failed"
-                        ? "This material couldn't be processed, so AI resources aren't available. Try re-uploading a text-based PDF."
-                        : "Processing… AI resources unlock once the PDF is ready."}
+                        ? t("details.this_material_couldnt_be_processed")
+                        : t("details.processing")}
                     </p>
                   ) : (
                     <>

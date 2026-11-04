@@ -51,6 +51,10 @@ class User(Base):
     study_level: Mapped[str] = mapped_column(String(64), default="")
     studying: Mapped[str] = mapped_column(String(255), default="")
     onboarding_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Interface language ("en" | "ar") — UI-only, stored per user.
+    interface_language: Mapped[str] = mapped_column(String(8), default="en")
+    # Language the student wants AI-generated content in ("en" | "ar").
+    ai_content_language: Mapped[str] = mapped_column(String(8), default="en")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     subjects: Mapped[list["Subject"]] = relationship(

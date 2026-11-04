@@ -6,8 +6,8 @@ export function getQuiz(materialId) {
   return request(`/api/materials/${materialId}/quiz`);
 }
 
-export function generateQuiz(materialId, regenerate = false) {
-  return request(`/api/materials/${materialId}/quiz?regenerate=${regenerate}`, { method: "POST" });
+export function generateQuiz(materialId, regenerate = false, language = "en") {
+  return request(`/api/materials/${materialId}/quiz?regenerate=${regenerate}&language=${language}`, { method: "POST" });
 }
 
 export function submitQuiz(quizId, answers) {

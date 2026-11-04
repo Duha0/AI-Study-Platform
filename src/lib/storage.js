@@ -16,6 +16,7 @@
 const TOKEN_KEY = "studyai-token";
 const USER_CACHE_KEY = "studyai-user-cache";
 const THEME_KEY = "studyai-theme";
+const LANG_KEY = "studyai-lang";
 
 /* The study-level choices shared by Onboarding and Profile — exported from
    here so both dropdowns can never drift apart. */
@@ -103,6 +104,28 @@ export function writeTheme(theme) {
     localStorage.setItem(THEME_KEY, theme);
   } catch {
     // The theme still applies for this session.
+  }
+}
+
+/* --------------------------------------------------------------------------- language (UI-only) */
+
+export const SUPPORTED_LANGS = ["en", "ar"];
+
+export function readLang() {
+  try {
+    const saved = localStorage.getItem(LANG_KEY);
+    if (saved === "en" || saved === "ar") return saved;
+  } catch {
+    // Ignore and use the default below.
+  }
+  return "en"; // English is the default.
+}
+
+export function writeLang(lang) {
+  try {
+    localStorage.setItem(LANG_KEY, lang);
+  } catch {
+    // The language still applies for this session.
   }
 }
 

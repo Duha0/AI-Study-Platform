@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { authApi, ApiError } from "../lib/api";
 import { setToken, cacheUser } from "../lib/storage";
+import { t } from "../lib/i18n";
 
 // Backend-backed login. On success the JWT and user profile are stored via
 // lib/storage and handed to App.jsx, which loads the dashboard. UI unchanged.
@@ -15,7 +16,7 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
     event.preventDefault();
 
     if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
+      setError(t("auth.please_fill_every_field"));
       return;
     }
 
@@ -24,7 +25,7 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
     try {
       const response = await authApi.login(email.trim(), password);
       if (!response || !response.access_token) {
-        throw new Error("Login failed: invalid server response.");
+        throw new Error(t("auth.could_not_log_in"));
       }
       setToken(response.access_token);
 
@@ -37,7 +38,7 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
       if (apiError instanceof ApiError && apiError.status === 0) {
         setError(apiError.message);
       } else {
-        setError(apiError.message || "Could not log you in. Please try again.");
+        setError(apiError.message || t("auth.could_not_log_in"));
       }
     } finally {
       setIsSubmitting(false);
@@ -47,14 +48,14 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <h1 className="auth-heading">Log in</h1>
-        <p className="auth-subtitle">Welcome back — pick up where you left off.</p>
+        <h1 className="auth-heading">{t("auth.log_in")}</h1>
+        <p className="auth-subtitle">{t("auth.welcome_back")}</p>
 
         {error && <p className="form-error">{error}</p>}
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="login-email">Email</label>
+            <label htmlFor="login-email">{t("auth.email")}</label>
             <input
               id="login-email"
               type="email"
@@ -64,7 +65,7 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
           </div>
 
           <div className="field">
-            <label htmlFor="login-password">Password</label>
+            <label htmlFor="login-password">{t("auth.password")}</label>
             <input
               id="login-password"
               type="password"
@@ -74,14 +75,14 @@ function Login({ onLoginSuccess, onNavigateRegister }) {
           </div>
 
           <button type="submit" className="button-primary auth-submit" disabled={isSubmitting}>
-            {isSubmitting ? "Logging in…" : "Log In"}
+            {isSubmitting ? t("auth.logging_in") : t("auth.log_in_btn")}
           </button>
         </form>
 
         <p className="auth-switch">
-          Don't have an account?{" "}
+          {t("auth.dont_have_account")}{" "}
           <button type="button" className="link-button" onClick={onNavigateRegister}>
-            Create one
+            {t("auth.create_one")}
           </button>
         </p>
       </div>

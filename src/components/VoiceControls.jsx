@@ -1,5 +1,6 @@
 import { useEffect, useId, useSyncExternalStore } from "react";
 import { speechController } from "../lib/speechSynthesis";
+import { t } from "../lib/i18n";
 
 function SpeakerIcon() {
   return (
@@ -48,12 +49,12 @@ function VoiceControls({ text, label = "study content" }) {
           disabled={!String(text ?? "").trim()}
         >
           <SpeakerIcon />
-          Listen
+          {t("voice.listen")}
         </button>
       ) : (
         <>
           <span className="voice-status" role="status" aria-live="polite">
-            {status === "paused" ? "Paused" : "Speaking"}
+            {status === "paused" ? t("voice.paused") : t("voice.speaking")}
           </span>
           {canPause && status === "paused" ? (
             <button
@@ -61,7 +62,7 @@ function VoiceControls({ text, label = "study content" }) {
               className="voice-button"
               onClick={() => speechController.resume(ownerId)}
             >
-              Resume
+              {t("voice.resume")}
             </button>
           ) : canPause ? (
             <button
@@ -69,7 +70,7 @@ function VoiceControls({ text, label = "study content" }) {
               className="voice-button"
               onClick={() => speechController.pause(ownerId)}
             >
-              Pause
+              {t("voice.pause")}
             </button>
           ) : null}
           <button
@@ -77,7 +78,7 @@ function VoiceControls({ text, label = "study content" }) {
             className="voice-button"
             onClick={() => speechController.stop(ownerId)}
           >
-            Stop
+            {t("voice.stop")}
           </button>
         </>
       )}

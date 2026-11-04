@@ -42,6 +42,7 @@ def get_summary(
 def generate_summary(
     material_id: int,
     regenerate: bool = Query(False),
+    language: str = Query("en", description="Content language: 'en' or 'ar'"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -53,7 +54,7 @@ def generate_summary(
         return existing
 
     try:
-        summary = ai_service.generate_summary(db, material)
+        summary = ai_service.generate_summary(db, material, language=language)
     except provider.AIServiceError as exc:
         db.rollback()
         status_code = 503 if exc.not_configured else 502
@@ -83,6 +84,7 @@ def get_flashcards(
 def generate_flashcards(
     material_id: int,
     regenerate: bool = Query(False),
+    language: str = Query("en", description="Content language: 'en' or 'ar'"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -94,7 +96,7 @@ def generate_flashcards(
         return existing
 
     try:
-        cards = ai_service.generate_flashcards(db, material)
+        cards = ai_service.generate_flashcards(db, material, language=language)
     except provider.AIServiceError as exc:
         db.rollback()
         status_code = 503 if exc.not_configured else 502

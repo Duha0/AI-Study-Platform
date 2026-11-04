@@ -32,3 +32,146 @@ body {
   outline: 2px solid var(--green, #2e6b4f);
   outline-offset: 2px;
 }
+
+/* --- RTL layout adjustments (applied when [dir="rtl"] on <html>) --- */
+
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--line, #e5e5e5);
+}
+
+[dir="rtl"] .nav-link {
+  text-align: right;
+}
+
+[dir="rtl"] .main {
+  text-align: right;
+}
+
+[dir="rtl"] .subject-top {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .material-row {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .material-row-shell {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .material-delete-button {
+  margin-left: 8px;
+  margin-right: 0;
+}
+
+[dir="rtl"] .quiz-option {
+  text-align: right;
+}
+
+[dir="rtl"] .voice-controls {
+  text-align: right;
+}
+
+[dir="rtl"] .landing-hero-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .modal-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .flashcard-controls {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .study-video-search-card {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .theme-toggle {
+  margin-left: auto;
+}
+
+[dir="rtl"] .sidebar-logo {
+  flex-direction: row-reverse;
+  gap: 8px;
+}
+
+[dir="rtl"] .auth-switch {
+  text-align: right;
+}
+
+[dir="rtl"] .form-error,
+[dir="rtl"] .form-success {
+  text-align: right;
+}
+
+[dir="rtl"] .subject-count {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+[dir="rtl"] .welcome {
+  justify-content: flex-end;
+}
+
+[dir="rtl"] .welcome > div {
+  text-align: right;
+}
+
+[dir="rtl"] .section-title {
+  text-align: right;
+}
+
+[dir="rtl"] .empty-state {
+  text-align: right;
+}
+
+[dir="rtl"] .flashcard {
+  text-align: right;
+}
+
+[dir="rtl"] .flashcard-hint {
+  margin-left: auto;
+}
+
+[dir="rtl"] .material-preview-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .summary-actions {
+  text-align: right;
+}
+
+[dir="rtl"] .quiz-options {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+}
+
+[dir="rtl"] .subject-bar {
+  /* ensure the fill bar still grows left-to-right visually, but label sits right */
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .material-when {
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* Ensure numbers/dates that should stay LTR even in RTL UI */
+[dir="rtl"] .stat-value,
+[dir="rtl"] .quiz-progress,
+[dir="rtl"] .flashcard-progress,
+[dir="rtl"] .material-meta,
+[dir="rtl"] .material-when {
+  direction: ltr;
+  text-align: left;
+  unicode-bidi: embed;
+}
+
+/* Keep the sidebar logo mark on the left visually even in RTL? No — flip it. */
+[dir="rtl"] .sidebar-name {
+  text-align: right;
+}

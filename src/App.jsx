@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { App as CapacitorApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import "./App.css";
+import { t, setLang, initLang } from "./lib/i18n";
 import Landing from "./pages/Landing";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
@@ -19,15 +20,17 @@ import {
   getCachedUser,
   clearAuth,
   getInitials,
+  writeLang,
 } from "./lib/storage";
 import { authApi, subjectsApi, ApiError } from "./lib/api";
 
 const navItems = [
-  { name: "Dashboard", icon: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" },
-  { name: "Subjects", icon: "M4 4h9a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4zM20 4h-4v13h4z" },
-  { name: "Progress", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
+  { key: "dashboard", name: "nav.dashboard", icon: "M3 10.5 12 3l9 7.5M5 9.5V21h14V9.5" },
+  { key: "subjects", name: "nav.subjects", icon: "M4 4h9a3 3 0 0 1 3 3v13a3 3 0 0 0-3-3H4zM20 4h-4v13h4z" },
+  { key: "progress", name: "nav.progress", icon: "M4 20V10M10 20V4M16 20v-7M22 20H2" },
   {
-    name: "Profile",
+    key: "profile",
+    name: "nav.profile",
     icon: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4.5 20c0-4.2 3.4-7 7.5-7s7.5 2.8 7.5 7",
   },
 ];
@@ -50,7 +53,7 @@ function ThemeToggle({ theme, onToggle }) {
       className="theme-toggle"
       onClick={onToggle}
       aria-pressed={isDark}
-      title={isDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={t(isDark ? "profile.light_mode" : "profile.dark_mode")}
     >
       <svg
         viewBox="0 0 24 24"
@@ -71,7 +74,7 @@ function ThemeToggle({ theme, onToggle }) {
         )}
       </svg>
       <span className="theme-toggle-label">
-        {isDark ? "Light mode" : "Dark mode"}
+        {t(isDark ? "profile.light_mode" : "profile.dark_mode")}
       </span>
     </button>
   );
@@ -82,13 +85,13 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
     <aside className="sidebar">
       <div className="sidebar-logo">
         <span className="sidebar-mark">S</span>
-        <span className="sidebar-name">StudyAI</span>
+        <span className="sidebar-name">{t("landing.title")}</span>
       </div>
 
       <nav className="sidebar-nav">
         {navItems.map((item) => (
           <button
-            key={item.name}
+            key={item.key}
             type="button"
             className={
               item.name === active ? "nav-link nav-link-active" : "nav-link"
@@ -108,7 +111,7 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
             >
               <path d={item.icon} />
             </svg>
-            {item.name}
+            {t(item.name)}
           </button>
         ))}
       </nav>
@@ -119,13 +122,13 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
         <div className="sidebar-user-row">
           <div className="sidebar-avatar">{getInitials(userName)}</div>
           <div>
-            <p className="sidebar-user">{userName || "Student"}</p>
-            <p className="sidebar-plan">Free plan</p>
+            <p className="sidebar-user">{userName || t("dashboard.welcome_back", { name: "" }).replace(/👋$/, "").trim() || "Student"}</p>
+            <p className="sidebar-plan">{t("profile.account")}</p>
           </div>
         </div>
 
         <button type="button" className="sidebar-logout" onClick={onLogout}>
-          Log Out
+          {t("common.log_out")}
         </button>
       </div>
     </aside>
@@ -138,12 +141,11 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(getToken()));
-  // What to render on first paint while the token is being validated:
-  // logged-out users see Landing; logged-in users see the app skeleton.
   const [activePage, setActivePage] = useState(() =>
     getToken() ? "Dashboard" : "Landing"
   );
   const [theme, setTheme] = useState(readTheme);
+  const [lang, setLangState] = useState(() => initLang());
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
   const [user, setUser] = useState(getCachedUser);
@@ -154,6 +156,10 @@ function App() {
     document.documentElement.setAttribute("data-theme", theme);
     writeTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    setLang(lang);
+  }, [lang]);
 
   // Session restoration: validate the stored token against the backend and
   // load the user's real subjects. Without a valid token this skips quietly
@@ -177,10 +183,8 @@ function App() {
       } catch (error) {
         if (cancelled) return;
         if (!(error instanceof ApiError) || error.status !== 401) {
-          // Server reachable but something else failed — show the app with
-          // a retry banner rather than kicking the person out.
           setBootError(
-            error instanceof Error ? error.message : "Could not load your data."
+            error instanceof Error ? error.message : t("common.try_again")
           );
         }
       } finally {
@@ -196,6 +200,11 @@ function App() {
 
   function toggleTheme() {
     setTheme(theme === "light" ? "dark" : "light");
+  }
+
+  function handleLangChange(newLang) {
+    setLangState(newLang);
+    writeLang(newLang);
   }
 
   // Re-fetch subjects from the backend — the one source of truth.
@@ -216,28 +225,21 @@ function App() {
     await refreshSubjects();
   }
 
-  // The one navigation function for the whole app — sidebar (Dashboard /
-  // Subjects / Progress / Profile) and the public pages alike.
   function handleNavigate(pageName) {
     setActivePage(pageName);
     setSelectedSubjectId(null);
   }
 
-  // Called by Login success: session established, straight to Dashboard.
   function handleAuthenticated(token, authenticatedUser) {
     setTokenAndUser(token, authenticatedUser);
     handleNavigate("Dashboard");
   }
 
-  // Called after Register: session established, but first-run personalization
-  // (Onboarding) comes before the Dashboard.
   function handleRegistered(token, registeredUser) {
     setTokenAndUser(token, registeredUser);
     handleNavigate("Onboarding");
   }
 
-  // Called when Onboarding completes: persist nothing here (the page already
-  // updated the profile via the API) — just carry the fresh user and move on.
   function handleOnboarded(updatedUser) {
     setUser(updatedUser);
     cacheUser(updatedUser);
@@ -254,7 +256,6 @@ function App() {
   }
 
   async function handleLogout() {
-    // JWT is stateless — clearing the stored token client-side IS the logout.
     clearAuth();
     setIsLoggedIn(false);
     setUser(null);
@@ -291,17 +292,13 @@ function App() {
 
   const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
 
-  // What should actually render: if the active page is a protected one but
-  // there's no session, fall back to the Landing page. Plain derivation —
-  // no effects, no cascading state — and the stored page is left untouched
-  // so logging back in returns the user to where they were.
   const visiblePage =
     !isLoggedIn && PROTECTED_PAGES.includes(activePage) ? "Landing" : activePage;
 
   if (isBooting) {
     return (
       <div className="app-boot">
-        <p>Signing you in…</p>
+        <p>{t("common.loading")}</p>
       </div>
     );
   }
@@ -352,11 +349,11 @@ function App() {
               onClick={() => {
                 setBootError(null);
                 refreshSubjects().catch((error) =>
-                  setBootError(error.message || "Could not load your data.")
+                  setBootError(error.message || t("common.try_again"))
                 );
               }}
             >
-              Try again
+              {t("common.try_again")}
             </button>
           </div>
         )}
@@ -387,9 +384,6 @@ function App() {
             />
           ))}
 
-        {/* A user who has just registered is logged in but lands on
-            Onboarding first — it renders inside the app shell as the
-            pre-Dashboard step. */}
         {visiblePage === "Onboarding" && <Onboarding onComplete={handleOnboarded} />}
 
         {visiblePage === "Progress" && <Progress onNavigate={handleNavigate} />}
@@ -400,6 +394,10 @@ function App() {
             theme={theme}
             onSetTheme={setTheme}
             onLogout={handleLogout}
+            lang={lang}
+            onLangChange={handleLangChange}
+            interfaceLanguage={user?.interface_language}
+            aiContentLanguage={user?.ai_content_language}
             onProfileUpdated={(updatedUser) => {
               setUser(updatedUser);
               cacheUser(updatedUser);

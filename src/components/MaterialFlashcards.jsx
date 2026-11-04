@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { resourcesApi } from "../lib/api";
 import VoiceControls from "./VoiceControls";
+import { t } from "../lib/i18n";
 
 /* Flashcards tab — real AI-generated flashcards via the backend.
  * Flip/previous/next UX preserved.
@@ -53,7 +54,7 @@ function MaterialFlashcards({ materialId }) {
       setIsFlipped(false);
       setPhase("ready");
     } catch (apiError) {
-      setError(apiError.message || "Flashcard generation failed. Please try again.");
+      setError(apiError.message || t("flashcards.flashcard_generation_failed"));
       setPhase(cards.length > 0 ? "ready" : "idle");
     }
   }
@@ -75,8 +76,8 @@ function MaterialFlashcards({ materialId }) {
   if (phase === "loading") {
     return (
       <div>
-        <h3 className="summary-heading">Flashcards</h3>
-        <p className="resource-placeholder">Checking for saved flashcards…</p>
+        <h3 className="summary-heading">{t("flashcards.flashcards")}</h3>
+        <p className="resource-placeholder">{t("flashcards.checking_for_saved_flashcards")}</p>
       </div>
     );
   }
@@ -84,14 +85,12 @@ function MaterialFlashcards({ materialId }) {
   if (phase === "idle" || phase === "generating") {
     return (
       <div>
-        <h3 className="summary-heading">Flashcards</h3>
+        <h3 className="summary-heading">{t("flashcards.flashcards")}</h3>
         {error && <p className="form-error">{error}</p>}
         {phase === "generating" ? (
-          <p className="resource-placeholder">Creating your flashcards…</p>
+          <p className="resource-placeholder">{t("flashcards.creating_your_flashcards")}</p>
         ) : (
-          <p className="resource-placeholder">
-            Click Generate Flashcards to create a set from this material.
-          </p>
+          <p className="resource-placeholder">{t("flashcards.click_generate_flashcards")}</p>
         )}
         <button
           type="button"
@@ -99,7 +98,7 @@ function MaterialFlashcards({ materialId }) {
           onClick={() => handleGenerate(false)}
           disabled={phase === "generating"}
         >
-          Generate Flashcards
+          {t("flashcards.generate_flashcards")}
         </button>
       </div>
     );
@@ -108,7 +107,7 @@ function MaterialFlashcards({ materialId }) {
   return (
     <div>
       <p className="flashcard-progress">
-        Card {currentIndex + 1} of {cards.length}
+        {t("flashcards.card_{n}_of_{total}", { n: currentIndex + 1, total: cards.length })}
       </p>
 
       <button
@@ -116,9 +115,9 @@ function MaterialFlashcards({ materialId }) {
         className="flashcard"
         onClick={() => setIsFlipped((flipped) => !flipped)}
       >
-        <span className="flashcard-label">{isFlipped ? "Answer" : "Question"}</span>
+        <span className="flashcard-label">{isFlipped ? t("flashcards.answer") : t("flashcards.question")}</span>
         <p className="flashcard-text">{isFlipped ? card?.back : card?.front}</p>
-        <span className="flashcard-hint">Click to flip</span>
+        <span className="flashcard-hint">{t("flashcards.click_to_flip")}</span>
       </button>
 
       {card && (
@@ -135,7 +134,7 @@ function MaterialFlashcards({ materialId }) {
           onClick={handlePrevious}
           disabled={isFirstCard}
         >
-          Previous
+          {t("flashcards.previous")}
         </button>
         <button
           type="button"
@@ -143,7 +142,7 @@ function MaterialFlashcards({ materialId }) {
           onClick={handleNext}
           disabled={isLastCard}
         >
-          Next
+          {t("flashcards.next")}
         </button>
       </div>
 
@@ -153,7 +152,7 @@ function MaterialFlashcards({ materialId }) {
           className="link-button"
           onClick={() => handleGenerate(true)}
         >
-          Regenerate flashcards
+          {t("flashcards.regenerate_flashcards")}
         </button>
       </div>
     </div>

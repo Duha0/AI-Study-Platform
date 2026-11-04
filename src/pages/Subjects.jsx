@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
+import { t } from "../lib/i18n";
 
 /* Subjects page. All data comes from the backend via App.jsx; creation and
    deletion go through the API handlers passed down, which this page awaits
@@ -16,14 +17,14 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
       await onCreateSubject(name, description);
       setIsModalOpen(false);
     } catch (apiError) {
-      setError(apiError.message || "Could not create the subject. Please try again.");
+      setError(apiError.message || t("subjects.could_not_delete_subject"));
       setIsModalOpen(false);
     }
   }
 
   async function handleDeleteClick(subject) {
     const confirmed = window.confirm(
-      `Delete "${subject.name}"? This can't be undone.`
+      t("subjects.delete_confirm", { name: subject.name })
     );
     if (!confirmed) return;
 
@@ -31,7 +32,7 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
     try {
       await onDeleteSubject(subject.id);
     } catch (apiError) {
-      setError(apiError.message || "Could not delete the subject. Please try again.");
+      setError(apiError.message || t("subjects.could_not_delete_subject"));
     }
   }
 
@@ -39,8 +40,8 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
     <>
       <header className="welcome">
         <div>
-          <h1 className="welcome-title">Subjects</h1>
-          <p className="welcome-subtitle">Everything you're studying, in one place.</p>
+          <h1 className="welcome-title">{t("subjects.title")}</h1>
+          <p className="welcome-subtitle">{t("subjects.subtitle")}</p>
         </div>
 
         <button
@@ -48,7 +49,7 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
           className="button-primary"
           onClick={() => setIsModalOpen(true)}
         >
-          Create Subject
+          {t("subjects.create_subject")}
         </button>
       </header>
 
@@ -57,17 +58,14 @@ function Subjects({ subjects, onCreateSubject, onSelectSubject, onDeleteSubject 
       <section className="section">
         {subjects.length === 0 ? (
           <div className="empty-state">
-            <h2 className="empty-state-title">No subjects yet</h2>
-            <p className="empty-state-text">
-              Create a subject to start uploading materials and generating
-              summaries, quizzes, and flashcards.
-            </p>
+            <h2 className="empty-state-title">{t("subjects.no_subjects_yet")}</h2>
+            <p className="empty-state-text">{t("subjects.empty_desc")}</p>
             <button
               type="button"
               className="button-primary"
               onClick={() => setIsModalOpen(true)}
             >
-              Create Subject
+              {t("subjects.create_subject")}
             </button>
           </div>
         ) : (

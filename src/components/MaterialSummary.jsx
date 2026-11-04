@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { resourcesApi } from "../lib/api";
 import VoiceControls from "./VoiceControls";
+import { t } from "../lib/i18n";
 
 /* Summary tab inside Material Preview — real AI summaries via the backend.
  *
@@ -58,24 +59,24 @@ function MaterialSummary({ materialId }) {
         setStatus("ready");
       })
       .catch((apiError) => {
-        setError(apiError.message || "Summary generation failed. Please try again.");
+        setError(apiError.message || t("summary.summary_generation_failed"));
         setStatus("idle");
       });
   }
 
   return (
     <div>
-      <h3 className="summary-heading">Summary</h3>
+      <h3 className="summary-heading">{t("summary.summary")}</h3>
 
-      {status === "loading" && <p className="resource-placeholder">Checking for a saved summary…</p>}
+      {status === "loading" && <p className="resource-placeholder">{t("summary.checking_for_saved_summary")}</p>}
 
       {status === "idle" && (
         <p className="resource-placeholder">
-          Click Generate Summary to create a summary of this material.
+          {t("summary.click_generate_summary")}
         </p>
       )}
 
-      {status === "generating" && <p className="resource-placeholder">Generating…</p>}
+      {status === "generating" && <p className="resource-placeholder">{t("summary.generating")}</p>}
 
       {error && <p className="form-error">{error}</p>}
 
@@ -101,7 +102,7 @@ function MaterialSummary({ materialId }) {
           onClick={() => handleGenerate(status === "ready")}
           disabled={status === "generating" || status === "loading"}
         >
-          {status === "ready" ? "Regenerate Summary" : "Generate Summary"}
+          {status === "ready" ? t("summary.regenerate_summary") : t("summary.generate_summary")}
         </button>
       </div>
     </div>

@@ -53,6 +53,7 @@ def _latest_attempt(db: Session, quiz_id: int, user_id: int) -> QuizAttempt | No
 def generate_quiz(
     material_id: int,
     regenerate: bool = Query(False, description="Regenerate even if a quiz exists"),
+    language: str = Query("en", description="Content language: 'en' or 'ar'"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -69,7 +70,7 @@ def generate_quiz(
         return _quiz_to_out(existing, _latest_attempt(db, existing.id, current_user.id))
 
     try:
-        quiz = ai_service.generate_quiz(db, material)
+        quiz = ai_service.generate_quiz(db, material, language=language)
     except provider.AIServiceError as exc:
         # Roll back any partial quiz writes before surfacing the failure.
         db.rollback()

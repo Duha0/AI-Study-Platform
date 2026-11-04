@@ -6,8 +6,10 @@
 // completed_materials are computed server-side, so this component only
 // renders numbers — no progress math lives here anymore.
 
+import { t } from "../lib/i18n";
+
 function SubjectCard({ subject, onOpen, onDelete }) {
-  const metaText = subject.description || "Tap to open this subject";
+  const metaText = subject.description || t("subject_card.tap_to_open");
 
   const totalMaterials = subject.material_count ?? 0;
   const completedMaterials = subject.completed_materials ?? 0;
@@ -22,7 +24,7 @@ function SubjectCard({ subject, onOpen, onDelete }) {
         <span className="subject-tile" style={{ backgroundColor: subject.color }}>
           {subject.name?.charAt(0).toUpperCase() || "?"}
         </span>
-        <span className="subject-count">{totalMaterials} materials</span>
+        <span className="subject-count">{totalMaterials} {t("stats.materials")}</span>
       </div>
 
       <h3 className="subject-name">{subject.name}</h3>
@@ -38,7 +40,7 @@ function SubjectCard({ subject, onOpen, onDelete }) {
         />
       </div>
       <p className="subject-percent">
-        {completedMaterials}/{totalMaterials} materials completed
+        {completedMaterials}/{totalMaterials} {t("stats.materials_completed")}
       </p>
     </>
   );
@@ -66,7 +68,7 @@ function SubjectCard({ subject, onOpen, onDelete }) {
           className="subject-delete-button"
           onClick={onDelete}
           aria-label={`Delete ${subject.name}`}
-          title="Delete subject"
+          title={t("common.delete")}
         >
           <svg
             viewBox="0 0 24 24"

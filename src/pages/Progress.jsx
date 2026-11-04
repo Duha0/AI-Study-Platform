@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { progressApi } from "../lib/api";
+import { t } from "../lib/i18n";
 
 /* Progress page — real, backend-computed stats.
  *
@@ -24,7 +25,7 @@ function Progress() {
         if (!cancelled) setProgress(data);
       } catch (apiError) {
         if (!cancelled) {
-          setError(apiError.message || "Could not load your progress. Please try again.");
+          setError(apiError.message || t("progress.loading_your_progress"));
         }
       } finally {
         if (!cancelled) setIsLoading(false);
@@ -41,9 +42,9 @@ function Progress() {
     return (
       <>
         <header className="welcome">
-          <h1 className="welcome-title">Progress</h1>
+          <h1 className="welcome-title">{t("progress.progress")}</h1>
         </header>
-        <p className="coming-soon">Loading your progress…</p>
+        <p className="coming-soon">{t("progress.loading_your_progress")}</p>
       </>
     );
   }
@@ -52,11 +53,11 @@ function Progress() {
     return (
       <>
         <header className="welcome">
-          <h1 className="welcome-title">Progress</h1>
+          <h1 className="welcome-title">{t("progress.progress")}</h1>
         </header>
         <p className="form-error">{error}</p>
         <button type="button" className="button-secondary" onClick={() => window.location.reload()}>
-          Try again
+          {t("common.try_again")}
         </button>
       </>
     );
@@ -69,9 +70,9 @@ function Progress() {
     <>
       <header className="welcome">
         <div>
-          <h1 className="welcome-title">Progress</h1>
+          <h1 className="welcome-title">{t("progress.progress")}</h1>
           <p className="welcome-subtitle">
-            How your studying is going, across every subject.
+            {t("progress.how_your_studying_is_going")}
           </p>
         </div>
       </header>
@@ -80,42 +81,40 @@ function Progress() {
         <div className="stats-grid">
           <article className="stat-card">
             <p className="stat-value">{totals?.total_subjects ?? 0}</p>
-            <p className="stat-label">Subjects</p>
+            <p className="stat-label">{t("progress.subjects")}</p>
           </article>
           <article className="stat-card">
             <p className="stat-value">{totals?.total_materials ?? 0}</p>
-            <p className="stat-label">Materials</p>
+            <p className="stat-label">{t("progress.materials")}</p>
           </article>
           <article className="stat-card">
             <p className="stat-value">{totals?.completed_materials ?? 0}</p>
-            <p className="stat-label">Completed</p>
+            <p className="stat-label">{t("progress.completed")}</p>
           </article>
           <article className="stat-card">
             <p className="stat-value">{totals?.overall_percent ?? 0}%</p>
-            <p className="stat-label">Overall Progress</p>
+            <p className="stat-label">{t("stats.overall_progress")}</p>
           </article>
           <article className="stat-card">
             <p className="stat-value">{totals?.quiz_attempts ?? 0}</p>
-            <p className="stat-label">Quiz Attempts</p>
+            <p className="stat-label">{t("progress.quiz_attempts")}</p>
           </article>
           <article className="stat-card">
             <p className="stat-value">
               {totals?.average_score_percent != null ? `${totals.average_score_percent}%` : "—"}
             </p>
-            <p className="stat-label">Avg. Quiz Score</p>
+            <p className="stat-label">{t("progress.avg_quiz_score")}</p>
           </article>
         </div>
       </section>
 
       <section className="section">
-        <h2 className="section-title">By Subject</h2>
+        <h2 className="section-title">{t("progress.by_subject")}</h2>
 
         {subjectRows.length === 0 ? (
           <div className="empty-state">
-            <h2 className="empty-state-title">Nothing to track yet</h2>
-            <p className="empty-state-text">
-              Create a subject and upload a material to start building progress.
-            </p>
+            <h2 className="empty-state-title">{t("progress.nothing_to_track_yet")}</h2>
+            <p className="empty-state-text">{t("progress.empty_desc")}</p>
           </div>
         ) : (
           <ul className="material-list">
@@ -127,12 +126,12 @@ function Progress() {
                     <div className="material-title-row">
                       <p className="material-title">{row.subject_name}</p>
                       <span className="completion-badge completion-in-progress">
-                        {row.percent}% complete
+                        {row.percent}% {t("progress.complete")}
                       </span>
                     </div>
                     <p className="material-meta">
-                      {row.completed_materials}/{row.total_materials} materials completed ·{" "}
-                      {row.quiz_attempts} quiz {row.quiz_attempts === 1 ? "attempt" : "attempts"}
+                      {row.completed_materials}/{row.total_materials} {t("stats.materials_completed")} ·{" "}
+                      {row.quiz_attempts} {t(row.quiz_attempts === 1 ? "progress.attempt" : "progress.attempts")}
                       {row.average_score_percent != null
                         ? ` · avg score ${row.average_score_percent}%`
                         : ""}

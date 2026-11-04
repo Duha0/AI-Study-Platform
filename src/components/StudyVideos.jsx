@@ -5,6 +5,7 @@ import {
   getYouTubeSearchUrl,
   normalizeYouTubeVideoResults,
 } from "../lib/youtubeStudyVideos";
+import { t } from "../lib/i18n";
 
 function StudyVideos({
   materialId,
@@ -46,7 +47,7 @@ function StudyVideos({
   return (
     <section className="study-videos" aria-labelledby="study-videos-heading">
       <h3 id="study-videos-heading" className="summary-heading">
-        Study Videos
+        {t("study_videos.heading")}
       </h3>
 
       {videos.length > 0 ? (
@@ -76,7 +77,7 @@ function StudyVideos({
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Watch on YouTube
+                  {t("study_videos.watch_on_youtube")}
                   <span aria-hidden="true">↗</span>
                 </a>
               </div>
@@ -86,18 +87,15 @@ function StudyVideos({
       ) : (
         <>
           <div className="study-video-empty-state">
-            <h4>No verified video results yet</h4>
-            <p>
-              Search YouTube for lessons related to this material. StudyAI
-              doesn’t invent video results or IDs.
-            </p>
+            <h4>{t("study_videos.no_results")}</h4>
+            <p>{t("study_videos.no_results_desc")}</p>
           </div>
           {queries.length > 0 ? (
             <div className="study-video-search-list" aria-label="Suggested searches">
               {queries.map((query) => (
                 <article className="study-video-search-card" key={query}>
                   <div>
-                    <p className="study-video-search-label">Search suggestion</p>
+                    <p className="study-video-search-label">{t("study_videos.search_suggestion_label")}</p>
                     <h4 className="study-video-title">{query}</h4>
                   </div>
                   <a
@@ -106,7 +104,7 @@ function StudyVideos({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    Search YouTube
+                    {t("common.search_youtube")}
                     <span aria-hidden="true">↗</span>
                   </a>
                 </article>
@@ -114,7 +112,7 @@ function StudyVideos({
             </div>
           ) : (
             <p className="resource-placeholder">
-              Add a material title to create a useful YouTube search.
+              {t("study_videos.add_title")}
             </p>
           )}
         </>

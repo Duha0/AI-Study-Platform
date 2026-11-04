@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SubjectCard from "../components/SubjectCard";
 import CreateSubjectModal from "../components/CreateSubjectModal";
+import { t } from "../lib/i18n";
 
 /* ---------------------------------------------------------------------------
    The Dashboard page.
@@ -29,7 +30,7 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
       await onCreateSubject(name, description);
       setIsModalOpen(false);
     } catch (apiError) {
-      setError(apiError.message || "Could not create the subject. Please try again.");
+      setError(apiError.message || t("dashboard.could_not_create_subject"));
       setIsModalOpen(false);
     }
   }
@@ -39,9 +40,9 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
       <header className="welcome">
         <div>
           <h1 className="welcome-title">
-            Welcome back{userName ? `, ${userName}` : ""} 👋
+            {t("dashboard.welcome_back", { name: userName ? `, ${userName}` : "" })}
           </h1>
-          <p className="welcome-subtitle">Your study space, powered by AI.</p>
+          <p className="welcome-subtitle">{t("dashboard.your_study_space")}</p>
         </div>
 
         <button
@@ -49,7 +50,7 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
           className="button-primary"
           onClick={() => setIsModalOpen(true)}
         >
-          Create Subject
+          {t("dashboard.create_subject")}
         </button>
       </header>
 
@@ -61,28 +62,28 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
             <div className="stats-grid">
               <article className="stat-card">
                 <p className="stat-value">{subjects.length}</p>
-                <p className="stat-label">Total Subjects</p>
+                <p className="stat-label">{t("stats.total_subjects")}</p>
               </article>
 
               <article className="stat-card">
                 <p className="stat-value">{totalMaterials}</p>
-                <p className="stat-label">Total Materials</p>
+                <p className="stat-label">{t("stats.total_materials")}</p>
               </article>
 
               <article className="stat-card">
                 <p className="stat-value">{completedMaterials}</p>
-                <p className="stat-label">Completed Materials</p>
+                <p className="stat-label">{t("stats.completed_materials")}</p>
               </article>
 
               <article className="stat-card">
                 <p className="stat-value">{overallProgressPercent}%</p>
-                <p className="stat-label">Overall Progress</p>
+                <p className="stat-label">{t("stats.overall_progress")}</p>
               </article>
             </div>
           </section>
 
           <section className="section">
-            <h2 className="section-title">Recent Subjects</h2>
+            <h2 className="section-title">{t("dashboard.recent_subjects")}</h2>
 
             <div className="subject-grid">
               {recentSubjects.map((subject) => (
@@ -94,17 +95,14 @@ function Dashboard({ subjects, onCreateSubject, userName }) {
       ) : (
         <section className="section">
           <div className="empty-state">
-            <h2 className="empty-state-title">Create your first subject</h2>
-            <p className="empty-state-text">
-              Subjects are where your materials, summaries, quizzes, and
-              flashcards will live. Create one to get started.
-            </p>
+            <h2 className="empty-state-title">{t("dashboard.create_first_subject")}</h2>
+            <p className="empty-state-text">{t("dashboard.empty_desc")}</p>
             <button
               type="button"
               className="button-primary"
               onClick={() => setIsModalOpen(true)}
             >
-              Create Subject
+              {t("dashboard.create_subject")}
             </button>
           </div>
         </section>

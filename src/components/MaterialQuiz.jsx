@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { quizzesApi } from "../lib/api";
 import VoiceControls from "./VoiceControls";
+import { t } from "../lib/i18n";
 
 /* Quiz tab — real quizzes generated from the material, scored on the backend.
  *
@@ -64,7 +65,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
       setAnswers([]);
       setPhase("taking");
     } catch (apiError) {
-      setError(apiError.message || "Quiz generation failed. Please try again.");
+      setError(apiError.message || t("quiz.could_not_submit"));
       setPhase("idle");
     }
   }
@@ -108,7 +109,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
       // Notify App so the subject's stats refresh (progress/completion).
       if (onComplete) onComplete(result);
     } catch (apiError) {
-      setError(apiError.message || "Could not submit your answers. Please try again.");
+      setError(apiError.message || t("quiz.could_not_submit"));
       setPhase("taking");
     }
   }
@@ -124,8 +125,8 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
   if (phase === "loading") {
     return (
       <div>
-        <h3 className="summary-heading">Quiz</h3>
-        <p className="resource-placeholder">Checking for a saved quiz…</p>
+        <h3 className="summary-heading">{t("quiz.quiz")}</h3>
+        <p className="resource-placeholder">{t("quiz.checking_for_saved_quiz")}</p>
       </div>
     );
   }
@@ -133,19 +134,17 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
   if (phase === "idle" || phase === "generating") {
     return (
       <div>
-        <h3 className="summary-heading">Quiz</h3>
+        <h3 className="summary-heading">{t("quiz.quiz")}</h3>
         {latestScore && (
           <p className="quiz-latest-score">
-            Latest Score: {latestScore.last_score ?? 0}/{latestScore.last_total ?? 0}
+            {t("quiz.latest_score", { score: latestScore.last_score ?? 0, total: latestScore.last_total ?? 0 })}
           </p>
         )}
         {error && <p className="form-error">{error}</p>}
         {phase === "generating" ? (
-          <p className="resource-placeholder">Generating your quiz… this can take a moment.</p>
+          <p className="resource-placeholder">{t("quiz.generating_your_quiz")}</p>
         ) : (
-          <p className="resource-placeholder">
-            Click Generate Quiz to create a quiz from this material.
-          </p>
+          <p className="resource-placeholder">{t("quiz.click_generate_quiz")}</p>
         )}
         <button
           type="button"
@@ -153,7 +152,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
           onClick={() => handleGenerate(false)}
           disabled={phase === "generating"}
         >
-          Generate Quiz
+          {t("quiz.generate_quiz")}
         </button>
       </div>
     );
@@ -165,9 +164,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
         <p className="quiz-score">
           {attempt.score}/{attempt.total}
         </p>
-        <p className="quiz-score-label">
-          Nice work — review the explanations below and try again anytime.
-        </p>
+        <p className="quiz-score-label">{t("quiz.nice_work")}</p>
 
         <div className="quiz-review">
           {(attempt.details || []).map((detail, index) => (
@@ -176,11 +173,11 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
                 {index + 1}. {detail.correct ? "✓" : "✗"} {quiz?.questions?.find((q) => q.id === detail.questionId)?.prompt || ""}
               </p>
               <p className="quiz-review-detail">
-                You chose <strong>{detail.selectedId}</strong>
+                {t("quiz.you_chose")} <strong>{detail.selectedId}</strong>
                 {!detail.correct && (
                   <>
                     {" "}
-                    — correct answer: <strong>{detail.correctOptionId}</strong>
+                    — {t("quiz.correct_answer")}: <strong>{detail.correctOptionId}</strong>
                   </>
                 )}
                 {detail.explanation ? ` — ${detail.explanation}` : ""}
@@ -190,7 +187,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
         </div>
 
         <button type="button" className="button-secondary" onClick={handleTryAgain}>
-          Try Again
+          {t("quiz.try_again")}
         </button>
       </div>
     );
@@ -201,18 +198,18 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
     <div>
       {attempt && (
         <p className="quiz-latest-score">
-          Latest Score: {attempt.score}/{attempt.total}
+          {t("quiz.latest_score", { score: attempt.score, total: attempt.total })}
         </p>
       )}
       {!attempt && latestScore && (
         <p className="quiz-latest-score">
-          Latest Score: {latestScore.last_score ?? 0}/{latestScore.last_total ?? 0}
+          {t("quiz.latest_score", { score: latestScore.last_score ?? 0, total: latestScore.last_total ?? 0 })}
         </p>
       )}
       {error && <p className="form-error">{error}</p>}
 
       <p className="quiz-progress">
-        Question {currentIndex + 1} of {quiz.questions.length}
+        {t("quiz.question_{n}_of_{total}", { n: currentIndex + 1, total: quiz.questions.length })}
       </p>
       <p className="quiz-question">{currentQuestion?.prompt}</p>
       {currentQuestion?.prompt && (
@@ -244,10 +241,10 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
         disabled={selectedOptionId === null || phase === "submitting"}
       >
         {phase === "submitting"
-          ? "Scoring…"
+          ? t("quiz.scoring")
           : isLastQuestion
-            ? "Finish"
-            : "Next"}
+            ? t("quiz.finish")
+            : t("quiz.next")}
       </button>
     </div>
   );

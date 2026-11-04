@@ -20,6 +20,10 @@ def complete_onboarding(
     current_user.studying = payload.studying.strip()
     current_user.study_level = payload.study_level
     current_user.onboarding_completed = True
+    if payload.interface_language:
+        current_user.interface_language = payload.interface_language
+    if payload.ai_content_language:
+        current_user.ai_content_language = payload.ai_content_language
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
@@ -35,6 +39,10 @@ def update_profile(
     current_user.full_name = payload.full_name.strip()
     current_user.studying = payload.studying.strip()
     current_user.study_level = payload.study_level
+    if payload.interface_language is not None:
+        current_user.interface_language = payload.interface_language
+    if payload.ai_content_language is not None:
+        current_user.ai_content_language = payload.ai_content_language
     db.add(current_user)
     db.commit()
     db.refresh(current_user)

@@ -60,10 +60,10 @@ def _normalize_option_letters(count: int) -> list[str]:
 # --------------------------------------------------------------------------- public API
 
 
-def generate_summary(db: Session, material) -> Summary:
+def generate_summary(db: Session, material, language: str = "en") -> Summary:
     """Generate (or overwrite, when called for regeneration) the summary."""
     text = _require_text(material)
-    system, user = prompts.build_summary_prompt(text)
+    system, user = prompts.build_summary_prompt(text, language)
     data = provider.generate_json(system, user)
 
     try:
@@ -89,10 +89,10 @@ def select_summary(material_id: int):
     return select(Summary).where(Summary.material_id == material_id)
 
 
-def generate_quiz(db: Session, material, num_questions: int = 5) -> Quiz:
+def generate_quiz(db: Session, material, num_questions: int = 5, language: str = "en") -> Quiz:
     """Generate (or overwrite) the quiz for a material."""
     text = _require_text(material)
-    system, user = prompts.build_quiz_prompt(text, num_questions)
+    system, user = prompts.build_quiz_prompt(text, num_questions, language)
     data = provider.generate_json(system, user)
 
     try:
@@ -143,10 +143,10 @@ def select_quiz(material_id: int):
     return select(Quiz).where(Quiz.material_id == material_id)
 
 
-def generate_flashcards(db: Session, material, num_cards: int = 8) -> list[Flashcard]:
+def generate_flashcards(db: Session, material, num_cards: int = 8, language: str = "en") -> list[Flashcard]:
     """Generate (or overwrite) flashcards for a material."""
     text = _require_text(material)
-    system, user = prompts.build_flashcards_prompt(text, num_cards)
+    system, user = prompts.build_flashcards_prompt(text, num_cards, language)
     data = provider.generate_json(system, user)
 
     try:

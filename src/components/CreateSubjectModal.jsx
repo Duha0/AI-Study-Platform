@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { t } from "../lib/i18n";
 
 // A simple modal for creating a subject. It only collects data and hands it
 // back to whoever opened it — `onCreate(name, description)` — the caller
@@ -54,40 +55,40 @@ function CreateSubjectModal({ onClose, onCreate }) {
         aria-labelledby="create-subject-title"
       >
         <h2 id="create-subject-title" className="modal-title">
-          Create Subject
+          {t("create_subject.title")}
         </h2>
 
         <form onSubmit={handleSubmit}>
           <div className="field">
-            <label htmlFor="subject-name">Subject name</label>
+            <label htmlFor="subject-name">{t("create_subject.name")}</label>
             <input
               id="subject-name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="e.g. Cell Biology"
+              placeholder={t("create_subject.name_placeholder")}
               ref={nameInputRef}
               required
             />
           </div>
 
           <div className="field">
-            <label htmlFor="subject-description">Short description</label>
+            <label htmlFor="subject-description">{t("create_subject.description")}</label>
             <textarea
               id="subject-description"
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="What is this subject about?"
+              placeholder={t("create_subject.description_placeholder")}
               rows={3}
             />
           </div>
 
           <div className="modal-actions">
             <button type="button" className="button-secondary" onClick={onClose}>
-              Cancel
+              {t("common.cancel")}
             </button>
             <button type="submit" className="button-primary">
-              Create
+              {t("common.create")}
             </button>
           </div>
         </form>

@@ -49,6 +49,8 @@ class UserBase(BaseModel):
     study_level: str
     studying: str
     onboarding_completed: bool
+    interface_language: str = "en"
+    ai_content_language: str = "en"
 
 
 class UserOut(UserBase):
@@ -58,12 +60,16 @@ class UserOut(UserBase):
 class OnboardingRequest(BaseModel):
     studying: str = Field(max_length=255)
     study_level: str = Field(max_length=64)
+    interface_language: str | None = Field(default="en", max_length=8)
+    ai_content_language: str | None = Field(default="en", max_length=8)
 
 
 class ProfileUpdateRequest(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
     studying: str = Field(max_length=255)
     study_level: str = Field(max_length=64)
+    interface_language: str | None = Field(default=None, max_length=8)
+    ai_content_language: str | None = Field(default=None, max_length=8)
 
 
 # --------------------------------------------------------------------------- subjects

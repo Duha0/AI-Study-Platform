@@ -48,3 +48,5 @@ backend/.env
 backend/.env.*.kilo/
 .vscode/
 ai_res.txt
+
+.kilo/

@@ -350,6 +350,39 @@ def test_summary_regenerate_uses_new_language(client, auth_headers, monkeypatch)
     assert "أنت" in captured["system"], captured["system"]
 
 
+def test_summary_arabic_regenerate_returns_arabic_content(client, auth_headers, monkeypatch):
+    """End-to-end: regenerate in Arabic returns Arabic content, not cached English."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    # First generate in English — cached.
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=en",
+        headers=auth_headers,
+    )
+
+    # Regenerate in Arabic — mock returns Arabic content.
+    captured.clear()
+
+    def arabic(system_prompt, user_prompt):
+        captured["system"] = system_prompt
+        captured["user"] = user_prompt
+        return {"intro": "هذا ملخص باللغة العربية", "points": ["نقطة أولى", "نقطة ثانية"]}
+
+    monkeypatch.setattr(provider, "generate_json", arabic)
+    response = client.post(
+        f"/api/materials/{material['id']}/summary?language=ar&regenerate=true",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["intro"] == "هذا ملخص باللغة العربية"
+    assert body["points"] == ["نقطة أولى", "نقطة ثانية"]
+    assert "Arabic" in captured["user"], captured["user"]
+    assert "أنت" in captured["system"], captured["system"]
+
+
 def test_quiz_uses_ai_content_language(client, auth_headers, monkeypatch):
     """Quiz generation forwards language to the AI provider prompts."""
     captured = {}

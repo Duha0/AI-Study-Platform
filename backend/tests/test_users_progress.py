@@ -26,6 +26,35 @@ def test_onboarding_and_profile_update(client, auth_headers):
     assert updated.json()["full_name"] == "New Name"
 
 
+def test_profile_update_persists_ai_content_language(client, auth_headers):
+    """PATCH /api/users/me must persist ai_content_language independently of interface_language."""
+    # Default is English.
+    me = client.get("/api/auth/me", headers=auth_headers).json()
+    assert me["ai_content_language"] == "en"
+
+    # Switch AI content language to Arabic while keeping interface English.
+    updated = client.patch(
+        "/api/users/me",
+        json={
+            "full_name": "Test Student",
+            "studying": "Chemistry",
+            "study_level": "High School",
+            "interface_language": "en",
+            "ai_content_language": "ar",
+        },
+        headers=auth_headers,
+    )
+    assert updated.status_code == 200, updated.text
+    body = updated.json()
+    assert body["ai_content_language"] == "ar"
+    assert body["interface_language"] == "en"
+
+    # Language survives a refetch (really in the DB).
+    again = client.get("/api/auth/me", headers=auth_headers).json()
+    assert again["ai_content_language"] == "ar"
+    assert again["interface_language"] == "en"
+
+
 def test_progress_empty_state(client, auth_headers):
     response = client.get("/api/progress", headers=auth_headers)
     assert response.status_code == 200

@@ -9,9 +9,9 @@ export function completeOnboarding(studying, studyLevel) {
   });
 }
 
-export function updateProfile(fullName, studying, studyLevel) {
+export function updateProfile(fullName, studying, studyLevel, interfaceLanguage = "en", aiContentLanguage = "en") {
   return request("/api/users/me", {
     method: "PATCH",
-    body: { full_name: fullName, studying, study_level: studyLevel },
+    body: { full_name: fullName, studying, study_level: studyLevel, interface_language: interfaceLanguage, ai_content_language: aiContentLanguage },
   });
 }

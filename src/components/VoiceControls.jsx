@@ -35,6 +35,11 @@ function VoiceControls({ text, label = "study content", language = "en" }) {
     [ownerId, text]
   );
 
+  // Temporarily disabled for the Beta release — hide TTS controls for all
+  // languages on both Web and Android. The implementation is preserved below
+  // for future development; only the render gate is disabled here.
+  return null;
+
   // English-only TTS for this release. Arabic and other languages are
   // postponed — hide controls entirely for Arabic content.
   //

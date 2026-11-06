@@ -38,7 +38,7 @@ const navItems = [
 // The pages that require a real backend session. Guarded by deriving what to
 // render from isLoggedIn — a logged-out visitor can never reach them (and
 // with no token, no API data can be fetched either).
-const PROTECTED_PAGES = ["Dashboard", "Subjects", "Progress", "Profile"];
+const PROTECTED_PAGES = ["dashboard", "subjects", "progress", "profile"];
 
 /* ---------------------------------------------------------------------------
    Small building blocks used only in this file.
@@ -94,10 +94,10 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
             key={item.key}
             type="button"
             className={
-              item.name === active ? "nav-link nav-link-active" : "nav-link"
+              item.key === active ? "nav-link nav-link-active" : "nav-link"
             }
             aria-current={item.name === active ? "page" : undefined}
-            onClick={() => onNavigate(item.name)}
+            onClick={() => onNavigate(item.key)}
           >
             <svg
               className="nav-icon"
@@ -142,7 +142,7 @@ function Sidebar({ active, onNavigate, theme, onToggleTheme, onLogout, userName 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => Boolean(getToken()));
   const [activePage, setActivePage] = useState(() =>
-    getToken() ? "Dashboard" : "Landing"
+    getToken() ? "dashboard" : "Landing"
   );
   const [theme, setTheme] = useState(readTheme);
   const [lang, setLangState] = useState(() => initLang());
@@ -232,7 +232,7 @@ function App() {
 
   function handleAuthenticated(token, authenticatedUser) {
     setTokenAndUser(token, authenticatedUser);
-    handleNavigate("Dashboard");
+    handleNavigate("dashboard");
   }
 
   function handleRegistered(token, registeredUser) {
@@ -243,7 +243,7 @@ function App() {
   function handleOnboarded(updatedUser) {
     setUser(updatedUser);
     cacheUser(updatedUser);
-    handleNavigate("Dashboard");
+    handleNavigate("dashboard");
   }
 
   function setTokenAndUser(token, authenticatedUser) {
@@ -272,7 +272,7 @@ function App() {
     CapacitorApp.addListener("backButton", () => {
       if (selectedSubjectId !== null) {
         setSelectedSubjectId(null);
-      } else if (isLoggedIn && activePage !== "Dashboard") {
+        } else if (isLoggedIn && activePage !== "dashboard") {
         setActivePage("Dashboard");
       } else if (!isLoggedIn && ["Login", "Register"].includes(activePage)) {
         setActivePage("Landing");
@@ -358,7 +358,7 @@ function App() {
           </div>
         )}
 
-        {visiblePage === "Dashboard" && (
+        {visiblePage === "dashboard" && (
           <Dashboard
             subjects={subjects}
             onCreateSubject={handleCreateSubject}
@@ -367,7 +367,7 @@ function App() {
           />
         )}
 
-        {visiblePage === "Subjects" &&
+        {visiblePage === "subjects" &&
           (selectedSubject ? (
             <SubjectDetails
               subject={selectedSubject}
@@ -386,9 +386,9 @@ function App() {
 
         {visiblePage === "Onboarding" && <Onboarding onComplete={handleOnboarded} />}
 
-        {visiblePage === "Progress" && <Progress onNavigate={handleNavigate} />}
+        {visiblePage === "progress" && <Progress onNavigate={handleNavigate} />}
 
-        {visiblePage === "Profile" && (
+        {visiblePage === "profile" && (
           <Profile
             user={user}
             theme={theme}

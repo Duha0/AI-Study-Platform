@@ -57,7 +57,7 @@ function formatUploadedLabel(isoDate) {
   })}`;
 }
 
-function SubjectDetails({ subject, onBack, onDataChanged }) {
+function SubjectDetails({ subject, language, onBack, onDataChanged }) {
   const [detail, setDetail] = useState(null); // SubjectDetail (subject + materials)
   const [isLoading, setIsLoading] = useState(true); // true until the first load resolves
   const [loadError, setLoadError] = useState(null);
@@ -541,12 +541,14 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                         <MaterialSummary
                           key={selectedMaterial.id}
                           materialId={selectedMaterial.id}
+                          language={language}
                         />
                       )}
                       {activeResourceTab === "quiz" && (
                         <MaterialQuiz
                           key={selectedMaterial.id}
                           materialId={selectedMaterial.id}
+                          language={language}
                           onComplete={handleQuizCompleted}
                         />
                       )}
@@ -554,6 +556,7 @@ function SubjectDetails({ subject, onBack, onDataChanged }) {
                         <MaterialFlashcards
                           key={selectedMaterial.id}
                           materialId={selectedMaterial.id}
+                          language={language}
                         />
                       )}
                       {activeResourceTab === "videos" && (

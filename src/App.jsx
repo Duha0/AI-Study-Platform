@@ -371,6 +371,7 @@ function App() {
           (selectedSubject ? (
             <SubjectDetails
               subject={selectedSubject}
+              language={user?.ai_content_language}
               onBack={() => setSelectedSubjectId(null)}
               onDataChanged={refreshSubjects}
               onNavigate={handleNavigate}

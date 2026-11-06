@@ -10,7 +10,7 @@ import { t } from "../lib/i18n";
  * text) surface a clear message and keep the retry button available.
  */
 
-function MaterialSummary({ materialId }) {
+function MaterialSummary({ materialId, language = "en" }) {
   const [status, setStatus] = useState("loading"); // loading | idle | generating | ready
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState(null);
@@ -50,7 +50,7 @@ function MaterialSummary({ materialId }) {
     setError(null);
 
     // Generation can take a while (the AI is reading the whole document).
-    const generationPromise = resourcesApi.generateSummary(materialId, regenerate);
+    const generationPromise = resourcesApi.generateSummary(materialId, regenerate, language);
     const minDelay = new Promise((resolve) => setTimeout(resolve, 800));
 
     Promise.all([generationPromise, minDelay])

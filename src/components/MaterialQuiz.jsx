@@ -13,7 +13,7 @@ import { t } from "../lib/i18n";
  * banner before this quiz's own attempts load.
  */
 
-function MaterialQuiz({ materialId, latestScore, onComplete }) {
+function MaterialQuiz({ materialId, latestScore, onComplete, language = "en" }) {
   const [phase, setPhase] = useState("loading"); // loading | idle | generating | taking | finished | error
   const [quiz, setQuiz] = useState(null);
   const [attempt, setAttempt] = useState(null);
@@ -57,7 +57,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete }) {
     setPhase("generating");
     setError(null);
     try {
-      const data = await quizzesApi.generateQuiz(materialId, regenerate);
+      const data = await quizzesApi.generateQuiz(materialId, regenerate, language);
       setQuiz(data);
       setAttempt(data.latest_attempt || null);
       setCurrentIndex(0);

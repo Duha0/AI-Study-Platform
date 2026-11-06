@@ -246,3 +246,141 @@ def test_ai_provider_error_does_not_leak_internals(client, auth_headers, monkeyp
     assert response.status_code == 502
     detail = response.json()["detail"]
     assert "SENSITIVE_PROVIDER_INTERNALS_SHOULD_NOT_LEAK" not in detail
+
+
+# --------------------------------------------------------------------------- language tests
+
+
+def _capturing_mock(monkeypatch, captured: dict):
+    """Replace provider.generate_json with one that records the prompts."""
+
+    def fake(system_prompt, user_prompt):
+        captured["system"] = system_prompt
+        captured["user"] = user_prompt
+        return {"intro": "summary", "points": ["point one", "point two"]}
+
+    monkeypatch.setattr(provider, "generate_json", fake)
+
+
+def test_summary_uses_ai_content_language(client, auth_headers, monkeypatch):
+    """The language query param is forwarded to the AI provider prompts."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    # Arabic requested.
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=ar",
+        headers=auth_headers,
+    )
+    assert "Arabic" in captured["user"], captured["user"]
+    assert "أنت" in captured["system"], captured["system"]
+
+    # English (default) requested — regenerate to bypass cache and hit the AI.
+    captured.clear()
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=en&regenerate=true",
+        headers=auth_headers,
+    )
+    assert "English" in captured["user"], captured["user"]
+    assert "You are a study assistant" in captured["system"], captured["system"]
+
+
+def test_summary_defaults_to_english(client, auth_headers, monkeypatch):
+    """No language parameter means English — preserves existing-user default."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    client.post(f"/api/materials/{material['id']}/summary", headers=auth_headers)
+    assert "English" in captured["user"], captured["user"]
+    assert "You are a study assistant" in captured["system"], captured["system"]
+
+
+def test_summary_cache_not_auto_regenerated_on_language_change(
+    client, auth_headers, monkeypatch
+):
+    """Changing language does not overwrite an existing summary without regenerate."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    # Generate in English first.
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=en",
+        headers=auth_headers,
+    )
+    first_user_prompt = captured["user"]
+
+    # Switch to Arabic without regenerate — must return the stored English summary.
+    calls = {"n": 0}
+
+    def counting(system, user):
+        calls["n"] += 1
+        return {"intro": "changed", "points": ["x"]}
+
+    monkeypatch.setattr(provider, "generate_json", counting)
+    response = client.post(
+        f"/api/materials/{material['id']}/summary?language=ar",
+        headers=auth_headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["intro"] == "summary"  # still the English one
+    assert calls["n"] == 0  # AI was not called
+
+
+def test_summary_regenerate_uses_new_language(client, auth_headers, monkeypatch):
+    """Regenerate with a different language calls the AI with the new prompts."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    # Generate in English.
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=en",
+        headers=auth_headers,
+    )
+
+    # Regenerate in Arabic — AI must be called with Arabic prompts.
+    client.post(
+        f"/api/materials/{material['id']}/summary?language=ar&regenerate=true",
+        headers=auth_headers,
+    )
+    assert "Arabic" in captured["user"], captured["user"]
+    assert "أنت" in captured["system"], captured["system"]
+
+
+def test_quiz_uses_ai_content_language(client, auth_headers, monkeypatch):
+    """Quiz generation forwards language to the AI provider prompts."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    client.post(
+        f"/api/materials/{material['id']}/quiz?language=ar",
+        headers=auth_headers,
+    )
+    assert "Arabic" in captured["user"], captured["user"]
+    assert "أنت" in captured["system"], captured["system"]
+
+    captured.clear()
+    client.post(f"/api/materials/{material['id']}/quiz", headers=auth_headers)
+    assert "English" in captured["user"], captured["user"]
+
+
+def test_flashcards_use_ai_content_language(client, auth_headers, monkeypatch):
+    """Flashcard generation forwards language to the AI provider prompts."""
+    captured = {}
+    _capturing_mock(monkeypatch, captured)
+    _, material = _create_ready_material(client, auth_headers)
+
+    client.post(
+        f"/api/materials/{material['id']}/flashcards?language=ar",
+        headers=auth_headers,
+    )
+    assert "Arabic" in captured["user"], captured["user"]
+    assert "أنت" in captured["system"], captured["system"]
+
+    captured.clear()
+    client.post(f"/api/materials/{material['id']}/flashcards", headers=auth_headers)
+    assert "English" in captured["user"], captured["user"]

@@ -7,7 +7,7 @@ import { t } from "../lib/i18n";
  * Flip/previous/next UX preserved.
  */
 
-function MaterialFlashcards({ materialId }) {
+function MaterialFlashcards({ materialId, language = "en" }) {
   const [phase, setPhase] = useState("loading"); // loading | idle | generating | ready
   const [cards, setCards] = useState([]);
   const [error, setError] = useState(null);
@@ -48,7 +48,7 @@ function MaterialFlashcards({ materialId }) {
     setPhase("generating");
     setError(null);
     try {
-      const data = await resourcesApi.generateFlashcards(materialId, regenerate);
+      const data = await resourcesApi.generateFlashcards(materialId, regenerate, language);
       setCards(data);
       setCurrentIndex(0);
       setIsFlipped(false);

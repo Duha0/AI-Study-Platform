@@ -59,7 +59,7 @@ export function createSpeechController(getRuntime = () => globalThis) {
     }
   }
 
-  function speak(ownerId, value) {
+  function speak(ownerId, value, language = "en") {
     const text = String(value ?? "").trim();
     stop();
     if (!text) return false;
@@ -80,6 +80,7 @@ export function createSpeechController(getRuntime = () => globalThis) {
     let utterance;
     try {
       utterance = new Utterance(text);
+      utterance.lang = language;
     } catch {
       return false;
     }

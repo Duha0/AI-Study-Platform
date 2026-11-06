@@ -213,7 +213,7 @@ function MaterialQuiz({ materialId, latestScore, onComplete, language = "en" }) 
       </p>
       <p className="quiz-question">{currentQuestion?.prompt}</p>
       {currentQuestion?.prompt && (
-        <VoiceControls label="this quiz question" text={currentQuestion.prompt} />
+        <VoiceControls label="this quiz question" text={currentQuestion.prompt} language={language} />
       )}
 
       <div className="quiz-options">

@@ -85,6 +85,7 @@ function MaterialSummary({ materialId, language = "en" }) {
           <VoiceControls
             label="summary"
             text={[summary.intro, ...(summary.points || [])].filter(Boolean).join(". ")}
+            language={language}
           />
           <p className="summary-text">{summary.intro}</p>
           <ul className="summary-list">

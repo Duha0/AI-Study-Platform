@@ -124,6 +124,7 @@ function MaterialFlashcards({ materialId, language = "en" }) {
         <VoiceControls
           label={isFlipped ? "flashcard answer" : "flashcard question"}
           text={isFlipped ? card.back : card.front}
+          language={language}
         />
       )}
 

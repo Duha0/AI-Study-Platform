@@ -19,7 +19,7 @@ function SpeakerIcon() {
   );
 }
 
-function VoiceControls({ text, label = "study content" }) {
+function VoiceControls({ text, label = "study content", language = "en" }) {
   const reactId = useId();
   const ownerId = `voice-${reactId}`;
   const status = useSyncExternalStore(
@@ -35,7 +35,15 @@ function VoiceControls({ text, label = "study content" }) {
     [ownerId, text]
   );
 
-  if (!isAvailable) {
+  // English-only TTS for this release. Arabic and other languages are
+  // postponed — hide controls entirely for Arabic content.
+  //
+  // Normalize the language value: null/undefined (existing users whose
+  // preference was never saved), "en", "en-US", "en-GB", etc. all count as
+  // English. Only "ar" / "ar-*" hides the controls — never enables Arabic.
+  const isArabic = typeof language === "string" && language.toLowerCase().startsWith("ar");
+
+  if (!isAvailable || isArabic) {
     return null;
   }
 
@@ -45,7 +53,7 @@ function VoiceControls({ text, label = "study content" }) {
         <button
           type="button"
           className="voice-button"
-          onClick={() => speechController.speak(ownerId, text)}
+          onClick={() => speechController.speak(ownerId, text, language)}
           disabled={!String(text ?? "").trim()}
         >
           <SpeakerIcon />

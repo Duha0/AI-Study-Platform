@@ -1,0 +1,32 @@
+# Keep build context small and exclude secrets/local state.
+.git
+.gitignore
+.vscode
+.kilo
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Secrets and local env — provide via hosting platform env vars only.
+.env
+.env.*
+!.env.example
+!.env*.example
+env.example
+*.pem
+*.key
+
+# Local data
+*.db
+*.sqlite3
+uploads/
+ai_res.txt
+
+# Tests are not needed in the runtime image (kept minimal change; remove to slim further).
+tests/

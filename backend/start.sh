@@ -3,7 +3,11 @@
 # Exits immediately on any failure (migrations must not be skipped).
 set -eu
 
+# Ensure commands run from the backend root (where app/, alembic.ini live).
+cd /app 2>/dev/null || cd "$(dirname "$0")"
+
 echo "[studyai] starting (env=${STUDYAI_ENV:-development})"
+
 
 # In production, refuse accidental SQLite/local-storage deployments.
 # Local development (default) is unaffected.

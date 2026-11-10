@@ -44,6 +44,8 @@ backend/.env.neon
 # Private environment files
 .env
 .env.*
+!.env.production
+!.env.example
 backend/.env
 backend/.env.*.kilo/
 .vscode/

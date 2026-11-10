@@ -4,9 +4,10 @@
  * error shaping, and the base URL live in exactly one place.
  *
  * Base URL resolution:
- * - VITE_API_URL set        -> e.g. "http://localhost:8000" (calls that host)
- * - VITE_API_URL empty      -> same-origin, so "/api/..." (Vite dev proxy
- *                              handles it locally; same-origin deploys work too)
+ * - VITE_API_URL set        -> use that URL (web or native, dev/prod)
+ * - Web (empty VITE_API_URL)-> same-origin "/api/..." (Vite dev proxy locally)
+ * - Native prod (Capacitor) -> deployed HTTPS API (no adb reverse)
+ * - Native dev (Capacitor)  -> http://localhost:8000 (adb reverse to host)
  */
 
 import { getToken, clearAuth } from "../storage";
@@ -15,14 +16,18 @@ function resolveApiBase() {
   const envBase = (import.meta.env.VITE_API_URL || "").replace(/\/+$/, "");
   if (envBase) return envBase;
 
-  // Capacitor/Android: use localhost with adb reverse, or emulator host
+  // Production native (Capacitor) builds: use the deployed HTTPS API (no adb reverse).
+  // Local native dev can still override via VITE_API_URL (e.g. http://localhost:8000 with adb reverse).
   try {
     if (typeof window !== "undefined") {
       const cap = window.Capacitor;
       if (cap) {
         const platform = cap.getPlatform ? cap.getPlatform() : cap.platform;
         if (platform === "android" || platform === "ios") {
-          // With adb reverse tcp:8000 tcp:8000, device localhost reaches host
+          if (import.meta.env.PROD) {
+            return "https://studyai-api-vk7v.onrender.com";
+          }
+          // Dev native: with adb reverse tcp:8000 tcp:8000, device localhost reaches host
           return "http://localhost:8000";
         }
       }
